@@ -6,3 +6,5 @@ external/
 *.zip
 __pycache__
 data/
+.history/
+traced/

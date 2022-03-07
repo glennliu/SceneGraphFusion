@@ -26,11 +26,13 @@ GraphSLAMGUI::GraphSLAMGUI(GraphSLAM *graphSlam, DatasetLoader_base *dataloader)
     mSurfelDrawer.Init(std::bind(&GraphSLAMGUI::GetSurfelColor,this,std::placeholders::_1,std::placeholders::_2));
     mCameraDrawer.Init();
     mTrajectoryDrawer.Init();
+    // std::cout<<mpDataLoader->GetDepthImage().cols<<"\n";
     for (auto &drawer : mImageDrawer)
         drawer.Init(mpDataLoader->GetDepthImage().cols, mpDataLoader->GetDepthImage().rows,
                     GL_RGB);
     mRGB = mpDataLoader->GetRGBImage().clone();//cv::Mat::zeros(mpDataLoader->GetDepthImage().rows, mpDataLoader->GetDepthImage().cols, CV_8UC3);
     mDepth = mpDataLoader->GetDepthImage().clone();
+    // std::cout<<"tt\n";
 
 #ifdef COMPILE_WITH_GRAPHPRED
     if (mpGraphSLAM->GetConfig()->graph_predict && mpGraphSLAM->GetGraphPred()) {
@@ -305,7 +307,8 @@ void GraphSLAMGUI::MainUI(){
     static bool save_binary_ply = true;
     if(ImGui::Button("Output surfels to ply")) {
         mpGraphSLAM->SaveSurfelsToPLY(mNodeFilterSize,pth_out, "inseg.ply",save_binary_ply);
-        printf("ply saved at %s\n",pth_out.c_str());
+        printf("ply saved to %s\n",pth_out.c_str());
+
     }
     ImGui::SameLine();
     ImGui::Checkbox("binary",&save_binary_ply);
@@ -1157,13 +1160,15 @@ std::string GraphSLAMGUI::GetEdgeLabel(const Edge *edge){
 }
 
 void GraphSLAMGUI::SetRender(int width, int height, const std::string &path, bool align) {
+    // std::cout<<width<<","<<height<<","
+    //     <<path<<","<<align<<"\n";
 #ifdef COMPILE_WITH_ASSIMP
     std::string folder, scan_id;
     PSLAM::MeshRenderType type;
     if(path.find("scene") != std::string::npos) {
         auto parent_folder = tools::PathTool::find_parent_folder(path, 1);
-        scan_id = tools::PathTool::getFileName(parent_folder);
-        folder =  tools::PathTool::find_parent_folder(parent_folder, 1);
+        scan_id = tools::PathTool::getFileName(path);
+        folder =  tools::PathTool::find_parent_folder(path, 1);
         type = PSLAM::MeshRenderType_ScanNet;
     } else {
         auto seq_folder = tools::PathTool::find_parent_folder(path,1);
@@ -1171,7 +1176,9 @@ void GraphSLAMGUI::SetRender(int width, int height, const std::string &path, boo
         folder = tools::PathTool::find_parent_folder(seq_folder,1);
         type = PSLAM::MeshRenderType_3RScan;
     }
+    std::cout<<type<<","<<folder<<","<<scan_id<<"\n";
     mMeshRender.reset( PSLAM::MakeMeshRenderer(width, height, folder,scan_id,type,align) );
+    
 #else
     throw std::runtime_error("did not compile with assimp");
 #endif

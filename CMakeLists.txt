@@ -33,6 +33,7 @@ ENDIF()
 ############
 # External #
 ############
+set(OpenCV_DIR /home/lch/tools/opencv-4.0.1/build)
 SET(WITH_OPENCV TRUE)
 SET(WITH_EIGEN TRUE)
 SET(WITH_TINYPLY TRUE)

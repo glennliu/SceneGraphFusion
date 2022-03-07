@@ -18,9 +18,15 @@ namespace PSLAM {
         std::unique_ptr<glUtil::Shader> mShader;
         std::unique_ptr<glUtil::Model> mModel;
         void Init(){
+            std::string tmp = m_folder+"/"+m_scanId+"/"+m_scanId+".ply";
+            std::cout<<tmp<<"\n";
             mShader = std::make_unique<glUtil::Shader>(vs, fs);
-            mModel = std::make_unique<glUtil::Model>( m_folder+"/"+m_scanId+"/"+m_scanId+"_vh_clean_2.ply" );
+            std::cout<<"rrrr\n";
+            mModel = std::make_unique<glUtil::Model>( tmp );
+            // std::cout<<"tttt\n";
+
             mModel->setShader(mShader.get());
+
         }
 
         void Render(const Eigen::Matrix4f &projection, const Eigen::Matrix4f &view, float near, float far) override{

@@ -22,14 +22,16 @@ namespace PSLAM {
             if (scan_id.find("scene") != std::string::npos ||
                     folder_lower.find("scannet")  != std::string::npos) {
                 meshRenderType = MeshRenderType_ScanNet;
+                std::cout<<"Render type:ScaneNet\n";
             } else if (folder_lower.find("3rscan") != std::string ::npos) {
                 meshRenderType = MeshRenderType_3RScan;
+                std::cout<<"Render type:3RScan\n";
             } else {
                 throw std::runtime_error("unable to detect type.");
             }
         }
 
-
+        
         MeshRendererInterface *renderer = nullptr;
         switch (meshRenderType) {
             case MeshRenderType_ScanNet:{

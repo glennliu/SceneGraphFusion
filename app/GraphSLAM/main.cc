@@ -8,6 +8,7 @@
 #include "../../Utils/parser.hpp"
 #include <ORUtils/Logging.h>
 #include <ORUtils/PathTool.hpp>
+#include <chrono>
 
 #ifdef COMPILE_WITH_PSLAM_GUI
 #include "../../libGraphSLAMGUI/GraphSLAMGUI.h"
@@ -23,7 +24,7 @@
 
 struct Params{
     std::string pth_in;
-    std::string pth_out = "./";
+    std::string pth_out = "/home/lch/dataset";
     std::string pth_model;
     std::string save_name = "inseg.ply";
     int min_pyr_level=2;
@@ -48,6 +49,31 @@ struct Params{
 
     bool verbose=false;
     int segment_filter=512;
+};
+
+class TicToc
+{
+  public:
+    TicToc()
+    {
+        tic();
+    }
+
+    void tic()
+    {
+        start = std::chrono::system_clock::now();
+    }
+
+    double toc_ms()
+    {
+        end = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - start;
+        start = std::chrono::system_clock::now();
+        return elapsed_seconds.count() * 1000;
+    }
+
+  private:
+    std::chrono::time_point<std::chrono::system_clock> start, end;
 };
 
 void ParseCommondLine(int argc, char **argv, Params &params) {
@@ -171,6 +197,9 @@ int main(int argc, char** argv) {
     }
 #endif
 
+    auto depth_img = dataset_loader_->GetDepthImage();
+    auto rgb_img = dataset_loader_->GetRGBImage();
+    
     SCLOG(INFO) << "Building framework...";
     PSLAM::ConfigPSLAM configPslam;
     /// Adjust configurations according to dataset and level
@@ -202,19 +231,23 @@ int main(int argc, char** argv) {
 
     PSLAM::GraphSLAM graphSlam(&configPslam, dataset_loader_->GetCamParamDepth());
 
+
 #ifdef COMPILE_WITH_PSLAM_GUI
     SCLOG(INFO) << "start gui...";
     PSLAM::GraphSLAMGUI gui(&graphSlam, dataset_loader_.get());
+    // std::cout<<"rr\n";
     if(params.use_render) gui.SetRender(dataset_loader_->GetCamParamDepth().width,dataset_loader_->GetCamParamDepth().height,path, true);
     gui.run();
 #else
     SCLOG(INFO) << "start processing frames...";
     while (true) {
         if (!dataset_loader_->Retrieve())break;
+        TicToc timer;
         SCLOG(VERBOSE) << "process frame: " << dataset_loader_->GetFrameIndex();
         const Eigen::Matrix4f pose = dataset_loader_->GetPose().inverse();
         auto rgb = dataset_loader_->GetRGBImage();
         auto d   = dataset_loader_->GetDepthImage();
+        std::cout<<"loader "<< timer.toc_ms()<<"ms, ";
 
         if(renderer) {
             auto t_p = dataset_loader_->GetPose();
@@ -223,9 +256,12 @@ int main(int argc, char** argv) {
             cv::Mat t_rgb;
             renderer->Render(t_rgb,d,t_p,dataset_loader_->GetCamParamDepth());
         }
+        std::cout<<"render "<< timer.toc_ms()<<"ms, ";
+
         CTICK("[ALL]0.all");
         graphSlam.ProcessFrame(dataset_loader_->GetFrameIndex(), rgb, d, &pose);
         CTOCK("[ALL]0.all");
+        std::cout<<"slam "<< timer.toc_ms()<<"ms\n";
 
 
     }

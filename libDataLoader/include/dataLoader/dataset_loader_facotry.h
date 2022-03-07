@@ -1,8 +1,10 @@
 #pragma once
 #include "dataset3RScan.h"
 #include "datasetScanNet.h"
+#include "datasetSceneNN.h"
 #include "dataloader_3rscan.h"
 #include "dataloader_scannet.h"
+#include "dataloader_scenenn.h"
 
 namespace PSLAM {
     struct  DataLoaderFactory {
@@ -13,10 +15,12 @@ namespace PSLAM {
 
             if(inputeType == DATASET_DETECT){
                 std::cerr << "detect data type: ";
+                // if(pth.find(".sens") != std::string::npos || pth.find("scene") != std::string::npos) {
                 if(pth.find(".sens") != std::string::npos || pth.find("scene") != std::string::npos) {
-                    inputeType = DATASET_SCANNET;
-                    std::cerr << "ScanNet";
-                } else {
+                    inputeType = DATASET_SCENENN;
+                    std::cerr << "SceneNN\n";
+                } 
+                else {
                     inputeType = DATASET_3RSCAN;
                     std::cerr << "3RScan";
                 }
@@ -33,6 +37,11 @@ namespace PSLAM {
                 case DATASET_SCANNET: {
                     auto database = std::make_shared<ScanNetDataset>(inputeType, pth);
                     output = new DatasetLoader_ScanNet(database);
+                    break;
+                }
+                case DATASET_SCENENN:{
+                    auto database = std::make_shared<SceneNNDataset>(inputeType,pth);
+                    output = new DatasetLoader_SceneNN(database);
                     break;
                 }
                 case DATASET_DETECT:

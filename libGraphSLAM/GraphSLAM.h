@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <opencv2/opencv.hpp>
 #include <future>
+#include <chrono>
 
 #ifdef COMPILE_WITH_GRAPHPRED
 #include "graphPredictor/GraphPredictor.h"
@@ -20,6 +21,32 @@
 #include <ORUtils/JsonUtil.h>
 #endif
 namespace PSLAM {
+
+class TicToc
+{
+        public:
+        TicToc()
+        {
+                tic();
+        }
+
+        void tic()
+        {
+                start = std::chrono::system_clock::now();
+        }
+
+        double toc_ms()
+        {
+                end = std::chrono::system_clock::now();
+                std::chrono::duration<double> elapsed_seconds = end - start;
+                start = std::chrono::system_clock::now();
+                return elapsed_seconds.count() * 1000;
+        }
+
+        private:
+        std::chrono::time_point<std::chrono::system_clock> start, end;
+};
+
     class GraphSLAM {
     public:
         explicit GraphSLAM(ConfigPSLAM *config, const CameraParameters &camParamD);

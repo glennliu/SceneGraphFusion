@@ -23,11 +23,8 @@ namespace PSLAM {
             suffix_rgb = ".color.jpg";
             suffix_pose = ".pose.txt";
             if (rotate_pose_img) {
-//                suffix_depth = ".rendered.depth.png";
-//                suffix_pose = ".align.pose.txt";
                 suffix_depth = ".depth.pgm";
                 suffix_pose = ".pose.txt";
-//                suffix_pose = use_aligned_pose? ".align.pose.txt" : ".pose.txt";
             }
 
             min_pyr_level = 3;

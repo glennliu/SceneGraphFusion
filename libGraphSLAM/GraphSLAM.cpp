@@ -39,7 +39,7 @@ bool GraphSLAM::Initialize(const CameraParameters &camParamD){
     Eigen::Matrix3d intrinsics;
     intrinsics(0,0) = camParamD.fx;
     intrinsics(1,1) = camParamD.fy;
-    intrinsics(0,2) = camParamD.cx;
+    intrinsics(0,2) = camParamD.cx; 
     intrinsics(1,2) = camParamD.cy;
     inseg_->InitializeCamera(intrinsics, camParamD.width, camParamD.height);
     return true;
@@ -64,10 +64,12 @@ void GraphSLAM::SaveModel(const std::string &output_folder) const {
         printf("unable to save model. inseg is not initialized.\n");
         return ;
     }
-    inseg_->map().SaveModel(output_folder+"/_inseg.map");
+    inseg_->map().SaveModel(output_folder+"/inseg.ply");
 }
 
 void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &depthImage,const Eigen::Matrix4f *pose) {
+    TicToc timer;
+    std::cout<<"Processing frame ...\n";
     if(pose){
         pose_ = *pose;
         inseg_->set_pose(pose_);
@@ -93,12 +95,15 @@ void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &
     CTICK("[SLAM][ProcessFrame]4.SSCPrediction");
     AddSelectedNodeToUpdate(idx);
     CTOCK("[SLAM][ProcessFrame]4.SSCPrediction");
+    
+    std::cout<<"Processed in "<<timer.toc_ms()<<" ms\n";
 
 #ifdef COMPILE_WITH_GRAPHPRED
     if(mpGraphPredictor->Pin()){
         SCLOG(ERROR) << "prediction thread is dead.";
     }
 #endif
+
 }
 
 void GraphSLAM::AddSelectedNodeToUpdate(int idx){
@@ -197,7 +202,7 @@ std::vector<std::shared_ptr<inseg_lib::Surfel>> GraphSLAM::FilterSegment(
     return filtered;
 }
 
-void GraphSLAM::SaveSurfelsToPLY(int segment_filter, const std::string &output_name, const std::string &output_folder, bool binary) {
+void GraphSLAM::SaveSurfelsToPLY(int segment_filter, const std::string &output_folder, const std::string &output_name, bool binary) {
     auto filtered_surfels = FilterSegment(segment_filter,inseg_->map().surfels);
     SaveSurfelsToPLY(output_folder, output_name, filtered_surfels, binary);
 }
@@ -510,6 +515,14 @@ void GraphSLAM::SaveSurfelsToPLY(const std::string &output_folder, const std::st
         if(surfel->label>0 && surfel->is_valid && surfel->is_stable)counter++;
 
     std::fstream file;
+    std::string output_file_dir = output_folder + output_name;
+    std::cout<<"saving to "<< output_file_dir<<"\n"
+        <<"nodes: "<<mGraph->nodes.size()<<"\n";
+        // <<"edges: "<<mGraph->edges.size()<<"\n";
+    for(auto node_ptr:mGraph->nodes){
+        std::cout<<node_ptr.first<<",";
+    }
+    std::cout<<"\n";
     if(!binary)
         file.open(output_folder+"/"+output_name, std::ios::out);
     else
@@ -563,7 +576,7 @@ void GraphSLAM::SaveSurfelsToPLY(const std::string &output_folder, const std::st
             write_binary<float>(file,1.f);
         }
         // color
-        const bool segment_color = false;
+        const bool segment_color = true;
         if(!binary) {
             if (segment_color) {
                 const cv::Vec3b &color = inseg_lib::CalculateLabelColor(surfel->label);
