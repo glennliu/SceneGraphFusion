@@ -1,4 +1,7 @@
 # SceneGraphFusion
+
+
+
 ![teaser](img/teaser.png)
 **Authors**: [Shun-Cheng Wu][sc], [Johanna Wald][jojo], [Keisuke Tateno][keisu], [Nassir Navab][nassir] and [Federico Tombari][fede]
 
@@ -9,6 +12,15 @@
 [fede]:http://campar.in.tum.de/Main/FedericoTombari
 
 This is the SceneGraphFusion c++ framework. For the network part of the code, check [here](https://github.com/ShunChengWu/3DSSG).
+
+# Branch Note
+This is a modified version of SceneGraphFusion. For the original version, please refer to Wu's branch [here](https://github.com/ShunChengWu/SceneGraphFusion). 
+
+The adopted functions in this branch are as follow,
+- Build active graph $\mathcal{G}^a$ and inactive graph $\mathcal{G}^i$.
+- Incorporate noise to camera pose. And verify the quality of scene graph under odometry drift.
+
+The branch is opened for debugging and collaboration. We are still testing the modified features. 
 
 # Prerequisites
 ## git, cmake
