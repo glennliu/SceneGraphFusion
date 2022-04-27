@@ -108,6 +108,8 @@ class TicToc
 
         void AddSelectedNodeToUpdate(int idx);
 
+        // void removeInactiveNodes(const int &idx);
+
         bool LoadPredictModel();
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -126,6 +128,8 @@ class TicToc
         // Graph
         ConfigPSLAM *mConfig;
         std::shared_ptr<Graph> mGraph;
+        // TODO: build active graph and inactive graph
+        std::shared_ptr<Graph> activeGraph;
 #ifdef COMPILE_WITH_GRAPHPRED
         GraphPredictorPtr mpGraphPredictor;
 #endif
@@ -135,7 +139,7 @@ class TicToc
         std::vector<std::shared_ptr<inseg_lib::Surfel>> FilterSegment(
                 int segment_filter, const std::vector<std::shared_ptr<inseg_lib::Surfel>> &surfels);
 
-
+        int debug_index = 0;
 
     };
 }

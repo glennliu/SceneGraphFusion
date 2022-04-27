@@ -24,10 +24,11 @@
 
 struct Params{
     std::string pth_in;
-    std::string pth_out = "/home/lch/dataset";
+    std::string pth_out = "/home/uav/lch_ws/code_ws/SceneGraph/3RScan/output";
     std::string pth_model;
     std::string save_name = "inseg.ply";
     int min_pyr_level=2;
+    int inactive_frames = 200;
 
     float depth_edge_threshold = -1; // -1: use default.
 
@@ -46,6 +47,7 @@ struct Params{
     bool fusion=true;
     ///
     bool thread=true;
+
 
     bool verbose=false;
     int segment_filter=512;
@@ -90,6 +92,7 @@ void ParseCommondLine(int argc, char **argv, Params &params) {
                      "Filter out segment that has not enough surfels.");
     parser.addOption(pkgcname("depth_edge_threshold", &params.depth_edge_threshold),
                      "depth_edge_threshold for InSeg");
+    parser.addOption(pkgcname("inactive_thre", &params.inactive_frames),"Select inactive nodes");
 
     parser.addOption(pkgcname("rendered", &params.use_render), "use rendered depth");
     parser.addOption(pkgcname("full_prop", &params.full_prop), "return full prop or just the maximum.");
@@ -214,6 +217,7 @@ int main(int argc, char** argv) {
         configPslam.graph_predict=params.use_predict;
         configPslam.main_config.max_pyr_level = 4;
         configPslam.main_config.min_pyr_level = params.min_pyr_level;
+        configPslam.inactive_frames_threshold = params.inactive_frames;
 
         if(params.depth_edge_threshold == -1) {
             SCLOG(VERBOSE) << "use predefined depth edge threshold: " << params.depth_edge_threshold;
@@ -235,7 +239,7 @@ int main(int argc, char** argv) {
 #ifdef COMPILE_WITH_PSLAM_GUI
     SCLOG(INFO) << "start gui...";
     PSLAM::GraphSLAMGUI gui(&graphSlam, dataset_loader_.get());
-    // std::cout<<"rr\n";
+    // std::cout<<dataset_loader_->get();
     if(params.use_render) gui.SetRender(dataset_loader_->GetCamParamDepth().width,dataset_loader_->GetCamParamDepth().height,path, true);
     gui.run();
 #else

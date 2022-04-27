@@ -3,8 +3,8 @@ project(GraphSLAM)
 ###########
 # Options #
 ###########
-OPTION(BUILD_GRAPHPRED "compile with scene graph prediction" OFF)
-OPTION(BUILD_GUI "compile with GUI" OFF)
+OPTION(BUILD_GRAPHPRED "compile with scene graph prediction" ON)
+OPTION(BUILD_GUI "compile with GUI" ON)
 OPTION(USE_RENDEREDVIEW "Enable generating rendered view for ScanNet and 3RScan dataset" ON)
 ###################
 # Project setting #
@@ -33,7 +33,7 @@ ENDIF()
 ############
 # External #
 ############
-set(OpenCV_DIR /home/lch/tools/opencv-4.0.1/build)
+# set(OpenCV_DIR /home/lch/tools/opencv-4.0.1/build)
 SET(WITH_OPENCV TRUE)
 SET(WITH_EIGEN TRUE)
 SET(WITH_TINYPLY TRUE)

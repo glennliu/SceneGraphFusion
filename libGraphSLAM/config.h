@@ -37,6 +37,8 @@ namespace PSLAM {
         float update_thres_node_size;
         /// Update a node if its time stamp is older than n
         int update_thres_time_stamp;
+        /// Set the node as inactive if its timestamp is older than n
+        int inactive_frames_threshold;
 
         std::string pth;
 

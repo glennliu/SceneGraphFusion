@@ -110,7 +110,9 @@ void Node::RemoveEdge(const EdgePtr &edge){
     edges.erase(edge);
 }
 
-void Node::UpdatePrediction(const std::map<std::string, float> &pd, const std::map<std::string,std::pair<size_t, size_t>> &sizeAndEdge, bool fusion) {
+void Node::UpdatePrediction(
+    const std::map<std::string, float> &pd, 
+    const std::map<std::string,std::pair<size_t, size_t>> &sizeAndEdge, bool fusion) {
     Lock lock(mMutPred);
     for(const auto &pair:pd) {
         auto name = pair.first;
@@ -185,6 +187,17 @@ int Node::GetPointSize() {
     return surfels.size();
 }
 
+bool Node::DeactivateSurfels()
+{
+    Lock Lock(mMutSurfel);
+    for(auto &pair:surfels){
+        auto &surfel = pair.second;
+        surfel->SetLabel(-1);
+        surfel->index_in_graph = -1;
+    }
+    return true;
+}
+
 void Node::UpdateSelectedNode(const size_t time, const size_t filter_size, const size_t num_pts, bool force) {
     if(mbNeedUpdateNodeFeature) return;
     const auto& last_size = lastUpdatePropertySize; // this will be updated in UpdatePrediction
@@ -206,6 +219,7 @@ void Node::UpdateSelectedNode(const size_t time, const size_t filter_size, const
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
 
+    // Randonly select parts of the surfels to update node properties.
     selected_surfels.clear();
     selected_surfels.reserve(num_pts);
 

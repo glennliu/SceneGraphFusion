@@ -344,8 +344,31 @@ void Graph::RemoveEdge(const std::pair<int,int> &pair){
     }
 }
 
-void Graph::UpdateSelectedNodes(const std::unordered_set<int> &filtered_selected_nodes, const size_t time,
-                                const bool force) {
+std::set<int> 
+Graph::RemoveInactiveNodes(const size_t &timestamp, int inactive_threshold)
+{
+    std::set<int> nodes_to_remove;
+    if(nodes.empty()) return nodes_to_remove;
+    int prev_nodes_number = nodes.size();
+
+    // std::unique_lock<std::mutex> lock(this->mMutNode);
+    for(const auto &node_itr:nodes){
+        if(timestamp - node_itr.second->time_stamp >inactive_threshold){
+            nodes_to_remove.emplace(node_itr.first);
+            node_itr.second->DeactivateSurfels();
+        }   
+    }
+    std::cout <<nodes_to_remove.size()<<" nodes to be removed out of "
+        << prev_nodes_number <<" nodes \n";
+    for(auto inactive_node:nodes_to_remove) RemoveNode(inactive_node);
+    std::cout<<"Succeed\n";
+
+    return nodes_to_remove;
+}
+
+void Graph::UpdateSelectedNodes(
+    const std::unordered_set<int> &filtered_selected_nodes, 
+    const size_t time,const bool force) {
     SCLOG(VERBOSE) << "Update selected surfels.";
     for (auto node_idx : filtered_selected_nodes) {
         if (node_idx == 0 ) continue;

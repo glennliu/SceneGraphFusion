@@ -29,6 +29,7 @@ public:
     void CheckConnectivity(float margin);
     /**
      * Update the label of a surfel
+     * This is updated during inseg
      * Remove surfel from node[surfel->label_old], chagne surfel->label to label and add it to node[label]
      * @param surfel target surfel
      * @param label new label
@@ -38,8 +39,14 @@ public:
     int AddEdge(int from, int to, const std::shared_ptr<Edge> &edge);
     int AddEdge(const std::shared_ptr<Edge> &edge);
 
-    void
-    UpdateSelectedNodes(const std::unordered_set<int> &filtered_selected_nodes, const size_t time, const bool force);
+    // Update each node properties.
+    void UpdateSelectedNodes(
+        const std::unordered_set<int> &filtered_selected_nodes, 
+        const size_t time, const bool force);
+
+    //
+    std::set<int> RemoveInactiveNodes(
+        const size_t &timestamp, int inactive_threshold = 200);
 
     void Wait();
 

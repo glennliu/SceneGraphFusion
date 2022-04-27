@@ -295,9 +295,15 @@ void GraphSLAMGUI::MainUI(){
         }
     }
 
-
     /// Save
-    const std::string pth_out = "./"; //TODO: make this an input
+    // const std::string pth_out = "./"; //TODO: make this an input
+    const std::string pth_out = 
+        tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 1)
+        +"/output";
+    tools::PathTool::check_and_create_folder(pth_out);
+    
+    // printf("check path:%s \n",pth_out.c_str());
+
     if(ImGui::Checkbox("RecordImg",&bRecordImg)) ;
     if(ImGui::Button("Save image")) RecordImg();
     if(ImGui::Button("Save Map")) {
@@ -306,7 +312,7 @@ void GraphSLAMGUI::MainUI(){
     }
     static bool save_binary_ply = true;
     if(ImGui::Button("Output surfels to ply")) {
-        mpGraphSLAM->SaveSurfelsToPLY(mNodeFilterSize,pth_out, "inseg.ply",save_binary_ply);
+        mpGraphSLAM->SaveSurfelsToPLY(mNodeFilterSize,pth_out, "/inseg.ply",save_binary_ply);
         printf("ply saved to %s\n",pth_out.c_str());
 
     }
@@ -324,11 +330,13 @@ void GraphSLAMGUI::MainUI(){
     }
     static bool save_full_prop = true;
     if(ImGui::Button("Save Graph")) {
+        printf("Saving graph  to %s \n",pth_out.c_str());
         auto scan_id = tools::PathTool::getFileName(tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 1));
         auto predictions = mpGraphSLAM->GetSceneGraph(save_full_prop);
         json11::Json::object json;
         json[scan_id] = predictions;
         ORUtils::JsonUtils::Dump(json, pth_out + "/predictions.json");
+        printf("Saved successfully\n");
 
 //        mpGraphSLAM->SaveGraph(pth_out,save_full_prop);
 //        printf("graph saved at %s\n",pth_out.c_str());

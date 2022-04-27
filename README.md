@@ -120,7 +120,26 @@ Then cd to the `exe_GraphSLAM` executable directory and do
 # with graph_pred 
 ./exe_GraphSLAM --pth_in /3RScan/data/3RScan/4acaebcc-6c10-2a2a-858b-29c7e4fb410d/sequence/ --pth_model /CVPR21_traced/traced/
 ```
+# Output file
+### Prediction.json
 
+```
+<scanId>
+|-- Segments
+    |-- Segment_0:
+        "type_0": probility_0,
+        "type_1": probility_0,
+        ...
+        "type_N": probility_N
+    |-- ...
+|-- Edges
+    |-- Edges_0_50:
+        "pred_type_0": probility_0,
+        "pred_type_1": probility_1,
+        ...
+        "pred_type_M": probility_M
+    |-- ...
+```
 
 # License
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)

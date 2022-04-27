@@ -40,19 +40,22 @@ namespace PSLAM {
 
         bool CheckConnectivity(Node *nodeP, float margin, bool modify);
 
+        // Last semantic label predicted
         const std::string GetLabel() const;
 
         void UpdateSelectedNode(const size_t time, const size_t filter_size, const size_t num_pts, bool force);
 
         int GetPointSize();
+
+        bool DeactivateSurfels();
     public:
         std::unordered_map<int, SurfelPtr> surfels;
         std::unordered_set<EdgePtr> edges;
-        /// The idx of this node (label)
+        /// The idx of this node (segment label)
         int idx;
-        std::atomic_int instance_idx;
+        // Instance id is different to segment id. Some segments are merged.
+        std::atomic_int instance_idx;   
         bool mDebug;
-        /// The last predicted semantic label of this node
         size_t time_stamp;
 
         // threads

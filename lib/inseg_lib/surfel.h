@@ -19,6 +19,8 @@ public:
     bool operator< (const Surfel &ref) const;
 
     void SetLabel(const int label);
+
+    // Return node label which it is clustered
     int GetLabel() const;
     
     int index_in_graph = -1;

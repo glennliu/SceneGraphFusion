@@ -2,7 +2,6 @@
 #define INSEG_LIB_LIB_H_
 
 #include <string>
-
 #include <opencv2/core/core.hpp>
 
 #include "image_pyramid.h"
@@ -55,6 +54,8 @@ public:
              MapConfig& map_config,
              const SegmentationConfig& segmentation_config);
     // Main process.
+    // - Update graph nodes properties.
+    // - Record the nodes to be updated. 
     void ProcessFrame(const cv::Mat& depth_map,
                       const cv::Mat& color_map) override;
 
