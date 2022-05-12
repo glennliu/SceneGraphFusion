@@ -7,11 +7,11 @@
 #include <memory>
 #include <inseg_lib/lib.h>
 #include <random>
-#include "../node.h"
-#include "../edge.h"
+#include "node.h"
+#include "edge.h"
 //#include "../nodeProperties.h"
-#include "../graph.h"
-#include "../config.h"
+#include "graph.h"
+#include "config.h"
 #include <json11.hpp>
 #include "EatGCN.h"
 #include <future>

@@ -344,6 +344,16 @@ void Graph::RemoveEdge(const std::pair<int,int> &pair){
     }
 }
 
+void Graph::RecordUpdateTime(const size_t &timestamp)
+{
+    if (nodes_to_update.empty()) return;
+
+    for(const auto node_:nodes_to_update){
+        auto node_ptr = nodes[node_];
+        node_ptr->time_stamp_viewed = timestamp;
+    }
+}
+
 std::set<int> 
 Graph::RemoveInactiveNodes(const size_t &timestamp, int inactive_threshold)
 {
@@ -353,7 +363,7 @@ Graph::RemoveInactiveNodes(const size_t &timestamp, int inactive_threshold)
 
     // std::unique_lock<std::mutex> lock(this->mMutNode);
     for(const auto &node_itr:nodes){
-        if(timestamp - node_itr.second->time_stamp >inactive_threshold){
+        if((timestamp - node_itr.second->time_stamp_viewed) > inactive_threshold){
             nodes_to_remove.emplace(node_itr.first);
             node_itr.second->DeactivateSurfels();
         }   

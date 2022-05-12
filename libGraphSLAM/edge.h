@@ -1,6 +1,6 @@
 #pragma once
 #ifdef COMPILE_WITH_GRAPHPRED
-#include "graphPredictor/MemoryBlock.h"
+#include "MemoryBlock.h"
 #endif
 #include <memory>
 #include <map>

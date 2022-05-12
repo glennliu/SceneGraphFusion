@@ -34,6 +34,7 @@ static bool LoadInfoIntrinsics(const std::string& filename,
     const std::string search_tag_h = depth_intrinsics? "m_depthHeight":"m_colorHeight";
     std::string line{""};
     std::ifstream file(filename);
+    std::cout<<"Loading intrinsic from "<<filename<<"...";
     int width,height;
     float fx,fy,cx,cy;
     if (file.is_open()) {
@@ -53,8 +54,11 @@ static bool LoadInfoIntrinsics(const std::string& filename,
         }
         file.close();
         intrinsics.Set(width,height,fx,fy,cx,cy,1.f);
+        std::cout<<"Succeed!\n";
+        // std::cout<<"fx:"<<fx<<","<<fy<<"\n";
         return true;
     }
+    
 
     return false;
 }

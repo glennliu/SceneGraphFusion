@@ -8,6 +8,7 @@ __pycache__
 data/
 .history/
 traced/
-ORUtils/
+ORUtils
 imgui.ini
-
+install/
+tmp

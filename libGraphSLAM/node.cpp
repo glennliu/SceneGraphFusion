@@ -192,8 +192,7 @@ bool Node::DeactivateSurfels()
     Lock Lock(mMutSurfel);
     for(auto &pair:surfels){
         auto &surfel = pair.second;
-        surfel->SetLabel(-1);
-        surfel->index_in_graph = -1;
+        surfel->is_valid = false;
     }
     return true;
 }
@@ -219,7 +218,7 @@ void Node::UpdateSelectedNode(const size_t time, const size_t filter_size, const
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
 
-    // Randonly select parts of the surfels to update node properties.
+    // Randomly select parts of the surfels to update node properties.
     selected_surfels.clear();
     selected_surfels.reserve(num_pts);
 

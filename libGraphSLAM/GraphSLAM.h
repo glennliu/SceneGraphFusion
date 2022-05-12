@@ -16,7 +16,7 @@
 #include <chrono>
 
 #ifdef COMPILE_WITH_GRAPHPRED
-#include "graphPredictor/GraphPredictor.h"
+#include "GraphPredictor.h"
 #else
 #include <ORUtils/JsonUtil.h>
 #endif
@@ -106,6 +106,7 @@ class TicToc
         /// Stop backend
         void Stop();
 
+        // Update the selected nodes
         void AddSelectedNodeToUpdate(int idx);
 
         // void removeInactiveNodes(const int &idx);

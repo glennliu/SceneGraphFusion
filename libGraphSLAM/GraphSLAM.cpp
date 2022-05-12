@@ -95,42 +95,18 @@ void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &
     mLastUpdatedSegments = mGraph->nodes_to_update;
     CTOCK("[SLAM][ProcessFrame]2.ChechConnectivity");
 
+    mGraph->RecordUpdateTime(mTimeStamp);
+    auto nodes_to_remove = mGraph->RemoveInactiveNodes(
+        mTimeStamp, mConfig->inactive_frames_threshold);
+
     if(!mConfig->graph_predict) return;
     CTICK("[SLAM][ProcessFrame]4.SSCPrediction");
     AddSelectedNodeToUpdate(idx);
     CTOCK("[SLAM][ProcessFrame]4.SSCPrediction");
 
-    auto nodes_to_remove = mGraph->RemoveInactiveNodes(
-        mTimeStamp, mConfig->inactive_frames_threshold);
-
-    /*
-    auto &gsm = inseg_->map();
-
-    if(!nodes_to_remove.empty()){   // Remove surfels from global model
-        debug_index = 0;
-
-        std::cout<<"Total surfels: "<< gsm.surfels.size()<<", "
-            <<"Removing inactive ones... \n";
-
-        for(auto surfel_iter=gsm.surfels.begin();surfel_iter!=gsm.surfels.end();surfel_iter++)
-        {
-            if(nodes_to_remove.find(surfel_iter->get()->GetLabel())!=nodes_to_remove.end())
-            {
-                debug_index ++;
-                surfel_iter = gsm.surfels.erase(surfel_iter);
-                std::cout<<"-";
-                if(index_ % 1000==0) std::cout<<index_;
-            }
-        }
-
-    }
-
-    */
-    // std::cout<<debug_index <<" surfels are removed\n ";
-    // gsm.surfels.erase(gsm.surfels.begin()); // Can be erased
-
-
     std::cout<<"Processed in "<<timer.toc_ms()<<" ms\n";
+    std::cout<< mGraph->nodes.size() <<" Nodes, "
+        <<inseg_->map().surfels.size() <<" Surfels,";
 
 #ifdef COMPILE_WITH_GRAPHPRED
     if(mpGraphPredictor->Pin()){

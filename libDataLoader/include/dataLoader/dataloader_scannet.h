@@ -9,7 +9,7 @@
 #include <opencv2/core.hpp>
 #include <Eigen/Core>
 #include <string>
-#include "../../ScanNetLoader/sensorData.h"
+#include "sensorData.h"
 //#include "ScanNetLoader/sensorData.h"
 //#include "CameraParameters.h"
 //#include "../Objects/Camera/CameraParameters.h"

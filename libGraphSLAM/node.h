@@ -1,7 +1,7 @@
 #pragma once
 #include "declaration.h"
 #ifdef COMPILE_WITH_GRAPHPRED
-#include "graphPredictor/MemoryBlock.h"
+#include "MemoryBlock.h"
 #endif
 #include <inseg_lib/surfel.h>
 #include <Eigen/Dense>
@@ -15,6 +15,8 @@
 #include <iterator>
 
 namespace PSLAM {
+    typedef std::shared_ptr<inseg_lib::Surfel> SurfelPtr;
+
     class Node {
         typedef std::unique_lock<std::mutex> Lock;
     public:
@@ -56,7 +58,10 @@ namespace PSLAM {
         // Instance id is different to segment id. Some segments are merged.
         std::atomic_int instance_idx;   
         bool mDebug;
+        // Timestamp that it is predicted
         size_t time_stamp;
+        // Timestamp it is viewed
+        size_t time_stamp_viewed;
 
         // threads
         std::vector<SurfelPtr> selected_surfels;

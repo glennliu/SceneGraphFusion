@@ -44,6 +44,8 @@ public:
         const std::unordered_set<int> &filtered_selected_nodes, 
         const size_t time, const bool force);
 
+    // For the nodes are updated, recrod their timestamp
+    void RecordUpdateTime(const size_t &timestamp);
     //
     std::set<int> RemoveInactiveNodes(
         const size_t &timestamp, int inactive_threshold = 200);

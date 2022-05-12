@@ -45,6 +45,6 @@ public:
     int label = 0;
 };
 }
-typedef std::shared_ptr<inseg_lib::Surfel> SurfelPtr;
+// typedef std::shared_ptr<inseg_lib::Surfel> SurfelPtr;
 
 #endif  // INSEG_LIB_SURFEL_H_

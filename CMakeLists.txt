@@ -61,3 +61,7 @@ ADD_SUBDIRECTORY(libDataLoader)
 ADD_SUBDIRECTORY(libGraphSLAM)
 ADD_SUBDIRECTORY(app)
 
+set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
+message(
+	"Set the cmake install dir to: ${CMAKE_SOURCE_DIR}/install\n"
+)
