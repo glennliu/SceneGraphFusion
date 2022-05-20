@@ -107,18 +107,23 @@ int main(int argc, char** argv) {
 #else
     SCLOG_ON(VERBOSE);
 #endif
-
-    if (params.save) tools::PathTool::create_folder(params.pth_out);
+    params.pth_out = params.dataset_dir+"/"+params.scan_name+"/output";
+    if (params.save) tools::PathTool::check_and_create_folder(params.pth_out);
     auto path = params.dataset_dir+"/"+params.scan_name+"/sequence";//params.pth_in;
-    if (path.find(".txt") != std::string::npos) {
-        std::ifstream file(path);
-        assert(file.is_open());
-        std::getline(file, path, '\n');
-    }
+    int latest_index = 0;
+    // if (path.find(".txt") != std::string::npos) {
+    //     std::ifstream file(path);
+    //     assert(file.is_open());
+    //     std::getline(file, path, '\n');
+    // }
+    
+
     SCLOG(INFO) << "Buliding data loader...";
     std::shared_ptr<PSLAM::DatasetLoader_base> dataset_loader_;
     dataset_loader_.reset(PSLAM::DataLoaderFactory::Make(path));
     dataset_loader_->Reset();
+    dataset_loader_->setFramewiseDrift(params.sigma_xy,params.sigma_z,params.sigma_yaw);
+    // std::cout<<"yaw:"<<params.sigma_yaw<<"\n";
 
     if(params.use_render) {
         if (path.find("scene") == std::string::npos) dataset_loader_->GetCamParamDepth() = dataset_loader_->GetCamParamRGB();
@@ -134,17 +139,13 @@ int main(int argc, char** argv) {
         );
     }
 #endif
-
-    auto depth_img = dataset_loader_->GetDepthImage();
-    auto rgb_img = dataset_loader_->GetRGBImage();
     
     SCLOG(INFO) << "Building framework...";
-    PSLAM::ConfigPSLAM configPslam;
+    PSLAM::ConfigPSLAM configPslam = getConfig(params);
+    std::cout<<configPslam.print()
+        <<dataset_loader_->GetDataBase()->print();
 
-    
-    configPslam = getConfig(params);
     PSLAM::GraphSLAM graphSlam(&configPslam, dataset_loader_->GetCamParamDepth());
-
 
 #ifdef COMPILE_WITH_PSLAM_GUI
     SCLOG(INFO) << "start gui...";
@@ -157,8 +158,11 @@ int main(int argc, char** argv) {
     while (true) {
         if (!dataset_loader_->Retrieve())break;
         TicToc timer;
-        SCLOG(VERBOSE) << "process frame: " << dataset_loader_->GetFrameIndex();
-        const Eigen::Matrix4f pose = dataset_loader_->GetPose().inverse();
+        latest_index = dataset_loader_->GetFrameIndex();
+        if(latest_index>= params.maximum_frame_index) break;
+
+        SCLOG(VERBOSE) << "process frame: " << latest_index;//dataset_loader_->GetFrameIndex();
+        const Eigen::Matrix4f pose = dataset_loader_->GetDriftedPose().inverse();
         auto rgb = dataset_loader_->GetRGBImage();
         auto d   = dataset_loader_->GetDepthImage();
         std::cout<<"loader "<< timer.toc_ms()<<"ms, ";
@@ -176,20 +180,24 @@ int main(int argc, char** argv) {
         graphSlam.ProcessFrame(dataset_loader_->GetFrameIndex(), rgb, d, &pose);
         CTOCK("[ALL]0.all");
         std::cout<<"slam "<< timer.toc_ms()<<"ms\n";
-
-
     }
     SCLOG(INFO) << "frame processing finished.";
 #endif
     if(params.save) {
         graphSlam.Stop();
-
+        const std::string output_folder = params.dataset_dir+"/"+params.scan_name+"/output";
+        const std::string output_dir = output_folder+"/"+std::to_string(latest_index)+"_";
+            // +std::to_string(dataset_loader_->GetFrameIndex())+"_";
         SCLOG(INFO) << "saving results.";
         if(params.save_graph_ply) {
-            auto colorMode = params.use_predict? PSLAM::GraphSLAM::SAVECOLORMODE_SEMANTIC : PSLAM::GraphSLAM::SAVECOLORMODE_RGB;
-            if(params.use_predict)
-                graphSlam.SaveNodesToPLY(params.segment_filter, params.pth_out, colorMode,
-                                     params.binary);
+            // auto colorMode = params.use_predict? PSLAM::GraphSLAM::SAVECOLORMODE_SEMANTIC : PSLAM::GraphSLAM::SAVECOLORMODE_RGB;
+            auto colorMode = PSLAM::GraphSLAM::SAVECOLORMODE_RGB;
+            if(params.use_predict){
+                graphSlam.SaveNodesToPLY(params.segment_filter, 
+                    output_dir, colorMode, params.binary);
+                graphSlam.SaveNodesToPLY(params.segment_filter,
+                    output_dir,colorMode,params.binary,true);
+            }
         }
 
         if(params.save_surfel_ply)
@@ -200,7 +208,7 @@ int main(int argc, char** argv) {
             auto predictions = graphSlam.GetSceneGraph(params.full_prop);
             json11::Json::object json;
             json[scan_id] = predictions;
-            ORUtils::JsonUtils::Dump(json, params.pth_out + "/predictions.json");
+            ORUtils::JsonUtils::Dump(json, output_dir + "predictions.json");
         }
 
         if(params.save_time) {
@@ -209,7 +217,7 @@ int main(int argc, char** argv) {
             if(graphSlam.GetGraphPred()) {
                 const auto &times = graphSlam.GetGraphPred()->GetTimes();
                 for (const auto &pair: times) {
-                    std::fstream file(params.pth_out + "/times_graph_" + pair.first + ".txt", std::ios::out);
+                    std::fstream file(output_dir + "times_graph_" + pair.first + ".txt", std::ios::out);
                     file << pair.first << "\n";
                     for (const auto &pp : pair.second)
                         file << pp.first << "," << pp.second << "\n";

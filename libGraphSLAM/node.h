@@ -22,7 +22,7 @@ namespace PSLAM {
     public:
         inline static std::string Unknown() { return "unknown"; };
 
-        Node(int label);
+        Node(int label, size_t timestamp);
 
         /// Thread
         int Add(const SurfelPtr &surfel);
@@ -60,8 +60,10 @@ namespace PSLAM {
         bool mDebug;
         // Timestamp that it is predicted
         size_t time_stamp;
-        // Timestamp it is viewed
+        // Timestamp it is latest viewed
         size_t time_stamp_viewed;
+        // Timestamp it is labelled active
+        size_t time_stamp_active;
 
         // threads
         std::vector<SurfelPtr> selected_surfels;
@@ -102,5 +104,5 @@ namespace PSLAM {
         std::string last_class_predicted = Unknown();
     };
     typedef std::shared_ptr<Node> NodePtr;
-    static inline NodePtr MakeNodePtr(int label) { return std::make_shared<Node>(label); }
+    // static inline NodePtr MakeNodePtr(int label) { return std::make_shared<Node>(label,0); }
 }  // namespace inseg_lib

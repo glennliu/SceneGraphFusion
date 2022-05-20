@@ -110,7 +110,7 @@ namespace PSLAM {
 
         void GetEdgeColor(Eigen::Vector3f& edge_color, const PSLAM::Edge *edge);
 
-        void RecordImg();
+        void RecordImg(const std::string &output_folder);
     };
 }
 

@@ -6,6 +6,7 @@
 #define LIBSURFELRECONSTRUCTION_DATASET_BASE_H
 #include "dataset_types.h"
 #include <string>
+#include <sstream>
 namespace PSLAM {
     class DatasetDefinitionBase {
     public:
@@ -37,6 +38,17 @@ namespace PSLAM {
         std::string folder_pose = "";
 
         int min_pyr_level = 1;
+
+        std::string print() const {
+            std::stringstream str;
+            str<<"Dataset Definition\n"
+                <<"--datasetType: "<<datasetType<<"\n"
+                <<"--folder: "<<folder<<"\n"
+                <<"--rotate_pose_img: "<<rotate_pose_img<<"\n"
+                <<"--max_depth: "<<max_depth<<"\n"
+                <<"--min_pyr_level: "<<min_pyr_level<<"\n";
+            return str.str();
+        }
     };
 }
 

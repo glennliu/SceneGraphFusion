@@ -34,7 +34,7 @@ static bool LoadInfoIntrinsics(const std::string& filename,
     const std::string search_tag_h = depth_intrinsics? "m_depthHeight":"m_colorHeight";
     std::string line{""};
     std::ifstream file(filename);
-    std::cout<<"Loading intrinsic from "<<filename<<"...";
+    std::cout<<"Loading intrinsic from "<<filename<<"...\n";
     int width,height;
     float fx,fy,cx,cy;
     if (file.is_open()) {
@@ -54,20 +54,16 @@ static bool LoadInfoIntrinsics(const std::string& filename,
         }
         file.close();
         intrinsics.Set(width,height,fx,fy,cx,cy,1.f);
-        std::cout<<"Succeed!\n";
-        // std::cout<<"fx:"<<fx<<","<<fy<<"\n";
         return true;
     }
-    
-
     return false;
 }
 
 DatasetLoader_3RScan::DatasetLoader_3RScan(std::shared_ptr<DatasetDefinitionBase> dataset):
         DatasetLoader_base(std::move(dataset)) {
-    if(!LoadInfoIntrinsics(m_dataset->folder+"/_info.txt",true,m_cam_param_d))
+    if(!LoadInfoIntrinsics(m_dataset->folder+"_info.txt",true,m_cam_param_d))
         throw std::runtime_error("unable to open _info file");
-    if(!LoadInfoIntrinsics(m_dataset->folder+"/_info.txt",false,m_cam_param_rgb))
+    if(!LoadInfoIntrinsics(m_dataset->folder+"_info.txt",false,m_cam_param_rgb))
         throw std::runtime_error("unable to open _info file");
     m_poseTransform.setIdentity();
     if(reinterpret_cast<PSLAM::Scan3RDataset*>(m_dataset.get())->use_aligned_pose) {
@@ -140,17 +136,19 @@ bool DatasetLoader_3RScan::Retrieve() {
     if (isFileExist(colorFilename.c_str())) {
         m_rgb = cv::imread(colorFilename, -1);
     }
+
     if (m_dataset->rotate_pose_img) {
         cv::rotate(m_d, m_d, cv::ROTATE_90_COUNTERCLOCKWISE);
     }
     LoadPose(m_pose, pose_file_name_,m_dataset->rotate_pose_img);
+
     m_pose = m_poseTransform * m_pose;
-    // std::cout<<m_pose<<"\n";
+    // m_pose = accumulated_drift * m_pose;
+
     frame_index += m_dataset->frame_index_counter;
+    incorporate_drift();
     return true;
 }
-
-
 
 void DatasetLoader_3RScan::Reset() {
     frame_index = 0;
@@ -163,4 +161,10 @@ Eigen::Matrix<float,4,4> DatasetLoader_3RScan::rotation_matrix_Z(const float rot
             0, 0, 1, 0,
             0, 0, 0, 1;
     return res;
+}
+
+void DatasetLoader_3RScan::incorporate_drift()
+{
+    accumulated_drift = drift * accumulated_drift;
+    std::cout<<"Accumulated drift:\n"<< accumulated_drift<<"\n";
 }

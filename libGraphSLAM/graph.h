@@ -2,15 +2,17 @@
 #define _H_INC_INSEG_MAP_SEGMENTS_IMPL_
 #include <unordered_set>
 #include <unordered_map>
-#include <Eigen/Dense>
+#include <mutex>
 #include <iostream>
-#include "../libGraphSLAM/config.h"
+
+#include <Eigen/Dense>
 #include <inseg_lib/surfel.h>
 #include <inseg_lib/map_segments.h>
+#include <ORUtils/thread_pool.hpp>
+
+#include "config.h"
 #include "node.h"
 #include "edge.h"
-#include <mutex>
-#include <ORUtils/thread_pool.hpp>
 
 namespace PSLAM {
 
@@ -39,6 +41,8 @@ public:
     int AddEdge(int from, int to, const std::shared_ptr<Edge> &edge);
     int AddEdge(const std::shared_ptr<Edge> &edge);
 
+    void updateTimeStamp(const size_t timestamp_);
+
     // Update each node properties.
     void UpdateSelectedNodes(
         const std::unordered_set<int> &filtered_selected_nodes, 
@@ -47,10 +51,14 @@ public:
     // For the nodes are updated, recrod their timestamp
     void RecordUpdateTime(const size_t &timestamp);
     //
-    std::set<int> RemoveInactiveNodes(
-        const size_t &timestamp, int inactive_threshold = 200);
+    // std::set<int> 
+    void RemoveInactiveNodes(const std::vector<int> &nodes_to_remove);
+        // const size_t &timestamp, int inactive_threshold = 200);
 
     void Wait();
+
+    //TODO: check
+    void labelNodes(const std::map<int,std::string> &instanceid_to_semantic);
 
     // ===
     // thread
@@ -67,6 +75,7 @@ private:
     void RemoveNode(int idx);
     void RemoveEdge(const std::pair<int,int> &pair);
     bool mbThread;
+    size_t timestamp_latest;
 
     std::unique_ptr<tools::TaskThreadPool> mPools;
 };

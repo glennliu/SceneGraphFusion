@@ -296,23 +296,22 @@ void GraphSLAMGUI::MainUI(){
     }
 
     /// Save
-    // const std::string pth_out = "./"; //TODO: make this an input
-    const std::string pth_out = 
-        tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 1)
-        +"/output";
-    tools::PathTool::check_and_create_folder(pth_out);
-    
+    const int idx = mpDataLoader->GetFrameIndex();
+    const std::string output_folder = 
+        tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 1) +"/output";
+    tools::PathTool::check_and_create_folder(output_folder);
+    const std::string pth_out = output_folder +"/" + std::to_string(idx)+"_";
     // printf("check path:%s \n",pth_out.c_str());
 
     if(ImGui::Checkbox("RecordImg",&bRecordImg)) ;
-    if(ImGui::Button("Save image")) RecordImg();
+    if(ImGui::Button("Save image")) RecordImg(pth_out);
     if(ImGui::Button("Save Map")) {
         mpGraphSLAM->SaveModel(pth_out);
         printf("map saved at %s\n",pth_out.c_str());
     }
     static bool save_binary_ply = true;
     if(ImGui::Button("Output surfels to ply")) {
-        mpGraphSLAM->SaveSurfelsToPLY(mNodeFilterSize,pth_out, "/inseg.ply",save_binary_ply);
+        mpGraphSLAM->SaveSurfelsToPLY(mNodeFilterSize,pth_out, "inseg.ply",save_binary_ply);
         printf("ply saved to %s\n",pth_out.c_str());
 
     }
@@ -326,6 +325,7 @@ void GraphSLAMGUI::MainUI(){
     };
     if(ImGui::Button("Save Nodes to ply")) {
         mpGraphSLAM->SaveNodesToPLY(mNodeFilterSize,pth_out, static_cast<PSLAM::GraphSLAM::SAVECOLORMODE>(node_color_saving_mode),save_binary_ply);
+        mpGraphSLAM->SaveNodesToPLY(mNodeFilterSize,pth_out,static_cast<PSLAM::GraphSLAM::SAVECOLORMODE>(node_color_saving_mode),save_binary_ply,true);
         printf("ply saved at %s\n",pth_out.c_str());
     }
     static bool save_full_prop = true;
@@ -335,7 +335,7 @@ void GraphSLAMGUI::MainUI(){
         auto predictions = mpGraphSLAM->GetSceneGraph(save_full_prop);
         json11::Json::object json;
         json[scan_id] = predictions;
-        ORUtils::JsonUtils::Dump(json, pth_out + "/predictions.json");
+        ORUtils::JsonUtils::Dump(json, pth_out + "predictions.json");
         printf("Saved successfully\n");
 
 //        mpGraphSLAM->SaveGraph(pth_out,save_full_prop);
@@ -468,9 +468,9 @@ void GraphSLAMGUI::Process(){
     }
     mGraphDrawer.Draw(windowWidth,windowHeight,eigen_vm,eigen_proj);
 
-    if(bRecordImg && bNeedUpdate){
-        RecordImg();
-    }
+    // if(bRecordImg && bNeedUpdate){
+    //     RecordImg();
+    // }
     bNeedUpdate = false;
     bNeedUpdateTexture=false;
 }
@@ -482,7 +482,7 @@ bool GraphSLAMGUI::ProcessSLAM(){
     }
     if(!bProcess) return true;
     CTICK("[GUI][Process]ProcessSLAM");
-    const Eigen::Matrix4f pose = mpDataLoader->GetPose();
+    const Eigen::Matrix4f pose = mpDataLoader->GetDriftedPose();
     auto idx = mpDataLoader->GetFrameIndex();
     mRGB = mpDataLoader->GetRGBImage();
     mDepth = mpDataLoader->GetDepthImage();
@@ -1192,7 +1192,7 @@ void GraphSLAMGUI::SetRender(int width, int height, const std::string &path, boo
 #endif
 }
 
-void GraphSLAMGUI::RecordImg() {
+void GraphSLAMGUI::RecordImg(const std::string &output_folder) {
     glfwGetFramebufferSize(window_->window, &window_->runtimeWidth, &window_->runtimeHeight);
     cv::Mat img(window_->runtimeHeight, window_->runtimeWidth, CV_8UC4);
     glReadBuffer( GL_FRONT );
@@ -1201,9 +1201,9 @@ void GraphSLAMGUI::RecordImg() {
     cv::flip(img, img, 0);
     cv::cvtColor(img, img, cv::COLOR_RGBA2BGRA);
     static int iterSave=0;
-    static const std::string pth_to_image_folder = "./imgs";
+    static const std::string pth_to_image_folder = output_folder;//"./imgs";
     char name[pth_to_image_folder.length() + 100];
-    sprintf(name, (pth_to_image_folder + "/color%04d.png").c_str(), iterSave);
+    sprintf(name, (pth_to_image_folder + "color%04d.png").c_str(), iterSave);
     tools::PathTool::create_folder(pth_to_image_folder);
     cv::imwrite(name, img);
     printf("Image saved to %s\n", name);

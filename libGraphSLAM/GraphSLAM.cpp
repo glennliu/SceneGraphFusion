@@ -14,6 +14,7 @@ using namespace PSLAM;
 
 GraphSLAM::GraphSLAM(ConfigPSLAM *config, const CameraParameters &camParamD):mConfig(config){
     mGraph = std::make_shared<Graph>(config, config->use_thread);//(config->use_thread);
+    inactive_mGraph = std::make_shared<Graph>(config,config->use_thread);
     inseg_ = std::make_shared<inseg_lib::InSegLib>(mGraph, config->inseg_config, config->main_config, config->map_config, config->segmentation_config);
     pose_.setIdentity();
     if(mConfig->graph_predict) {
@@ -70,13 +71,16 @@ void GraphSLAM::SaveModel(const std::string &output_folder) const {
 void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &depthImage,const Eigen::Matrix4f *pose) {
     TicToc timer;
     std::cout<<"Processing frame "<< idx <<" ...\n";
+    mTimeStamp = idx;
+    mGraph->updateTimeStamp(mTimeStamp);
+
     if(pose){
         pose_ = *pose;
         inseg_->set_pose(pose_);
+        // std::cout<<"Input pose:\n"<<pose_.inverse()<<"\n";
     }
 
     // SCLOG(VERBOSE) <<"Edges:"<<mGraph->edges.size();
-    mTimeStamp = idx;
     CTICK("[SLAM][ProcessFrame]1.ProcessFrame");
     inseg_->ProcessFrame(depthImage, colorImage);   
     CTOCK("[SLAM][ProcessFrame]1.ProcessFrame");
@@ -88,6 +92,7 @@ void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &
         mbInitMap = true;
     }
 
+    // std::cout<<"Output pose:\n"<<pose_.inverse()<<"\n";
 
     CTICK("[SLAM][ProcessFrame]2.ChechConnectivity");
     mGraph->CheckConnectivity(mConfig->neighbor_margin);
@@ -96,23 +101,76 @@ void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &
     CTOCK("[SLAM][ProcessFrame]2.ChechConnectivity");
 
     mGraph->RecordUpdateTime(mTimeStamp);
-    auto nodes_to_remove = mGraph->RemoveInactiveNodes(
-        mTimeStamp, mConfig->inactive_frames_threshold);
 
     if(!mConfig->graph_predict) return;
     CTICK("[SLAM][ProcessFrame]4.SSCPrediction");
     AddSelectedNodeToUpdate(idx);
     CTOCK("[SLAM][ProcessFrame]4.SSCPrediction");
 
-    std::cout<<"Processed in "<<timer.toc_ms()<<" ms\n";
-    std::cout<< mGraph->nodes.size() <<" Nodes, "
-        <<inseg_->map().surfels.size() <<" Surfels,";
-
 #ifdef COMPILE_WITH_GRAPHPRED
     if(mpGraphPredictor->Pin()){
         SCLOG(ERROR) << "prediction thread is dead.";
     }
 #endif
+
+    transitInactiveNodes(mTimeStamp);
+    std::cout<< mGraph->nodes.size() <<" Nodes, "
+        <<inseg_->map().surfels.size() <<" Surfels\n";
+    std::cout<<"Processed in "<<timer.toc_ms()<<" ms\n";
+
+}
+
+void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
+{
+    std::vector<int> inactive_nodes;
+    std::vector<SurfelPtr> inactive_surfels;
+    if(mGraph->nodes.empty()) return;
+    int prev_nodes_number = mGraph->nodes.size();
+    std::map<int,std::string> instanceid_to_semantic;
+
+    for(const auto &node_itr:mGraph->nodes){
+        //TODO: remove nodes been created a long period ago
+        const int inactive_frame_count = timestamp - node_itr.second->time_stamp_viewed;
+        const int active_frame_count = timestamp-node_itr.second->time_stamp_active;
+
+        if(inactive_frame_count>mConfig->inactive_frames_threshold||
+            active_frame_count > mConfig->active_frames_threshold){
+            inactive_nodes.emplace_back(node_itr.first);
+            // node_itr.second->DeactivateSurfels();
+
+            for(auto &pair:node_itr.second->surfels){
+                auto &surfel = pair.second;
+                if(surfel->is_valid && surfel->is_stable){
+                    SurfelPtr inactive_sf = std::make_shared<inseg_lib::Surfel>();
+
+                    inactive_sf->pos = surfel->pos;
+                    inactive_sf->normal = surfel->normal;
+                    inactive_sf->color = surfel->color;
+                    inactive_sf->radius = surfel->radius;
+                    inactive_sf->SetLabel(node_itr.second->instance_idx);
+                    inactive_sf->is_valid = true;
+                    inactive_sf->is_stable = true;
+
+                    inactive_mGraph->Add(inactive_sf);
+                }
+                surfel->is_valid = false;
+                // inseg_->map().SetInvalid(surfel->label);
+            }
+            // std::cout
+            //     <<"["<<node_itr.second->idx<<", "
+            //     <<node_itr.second->instance_idx<<", "
+            //     <<node_itr.second->GetLabel()
+            //     <<"], ";
+            //TODO: check the "same part" segments have their instance id merged
+            instanceid_to_semantic.emplace(node_itr.second->instance_idx,node_itr.second->GetLabel());
+        }   
+    }
+    // std::cout<<"\n";
+
+    mGraph->RemoveInactiveNodes(inactive_nodes);
+    inactive_mGraph->labelNodes(instanceid_to_semantic);
+    std::cout<<"-InactiveGraph: "<<inactive_mGraph->nodes.size()<<" nodes\n";
+
 }
 
 void GraphSLAM::AddSelectedNodeToUpdate(int idx){
@@ -224,9 +282,22 @@ void write_binary (std::ostream& os, T2 v) {
     os.write((char*)&vv,sizeof(T));
 }
 
-void GraphSLAM::SaveNodesToPLY(int segment_filter, const std::string &output_folder, SAVECOLORMODE saveColorMode, bool binary) {
+void GraphSLAM::SaveNodesToPLY(int segment_filter, 
+    const std::string &output_dir, SAVECOLORMODE saveColorMode, 
+    bool binary, bool inactive_graph_) {
     size_t counter = 0;
-    for (const auto &node : mGraph->nodes) {
+
+    std::shared_ptr<Graph> target_graph;
+    std::string path;
+    if(inactive_graph_) {
+        target_graph = std::shared_ptr<Graph>(inactive_mGraph);
+        path = output_dir +"inactive_node";
+    }
+    else {
+        target_graph = std::shared_ptr<Graph>(mGraph);
+        path = output_dir +"active_node";
+    }
+    for (const auto &node : target_graph->nodes) {
         if (node.first == 0 ) continue;
         if (segment_filter > 0)
             if (node.second->surfels.size() < size_t(segment_filter)) continue;
@@ -238,7 +309,7 @@ void GraphSLAM::SaveNodesToPLY(int segment_filter, const std::string &output_fol
         return;
     }
 
-    std::string path = output_folder + "/node";
+    // std::string path = output_folder + "/node";
     switch (saveColorMode) {
         case GraphSLAM::SAVECOLORMODE_RGB:
             path += "_RGB";
@@ -292,7 +363,7 @@ void GraphSLAM::SaveNodesToPLY(int segment_filter, const std::string &output_fol
 //        file.open(path, std::ios::out | std::ios::app | std::ios::binary);
 //    }
 
-    for (const auto &node: mGraph->nodes) {
+    for (const auto &node: target_graph->nodes) {
         if (node.first == 0 ) continue;
         if (segment_filter > 0)
             if (node.second->surfels.size() < size_t(segment_filter)) continue;
@@ -310,18 +381,6 @@ void GraphSLAM::SaveNodesToPLY(int segment_filter, const std::string &output_fol
                     file.write((char*)&v,sizeof(float));
                 }
             }
-
-//            if(print) {
-//                for (size_t i = 0; i < 1; ++i) {//TODO: remove me
-//                    Eigen::Vector3f color;
-//                    color.x() = float(surfel->color[2]) / 255 * 2.f - 1;
-//                    color.y() = float(surfel->color[1]) / 255 * 2.f - 1;
-//                    color.z() = float(surfel->color[0]) / 255 * 2.f - 1;
-//                    SCLOG(DEBUG) << node.first << ": "
-//                    << surfel->pos.transpose() << " " << color.transpose() << " " << surfel->normal.transpose();
-//                }
-//                print= false;
-//            }
 
             // label (segment label)
             if(!binary) file << node.first << " ";
@@ -506,7 +565,7 @@ void GraphSLAM::SaveNodesToPLY(int segment_filter, const std::string &output_fol
     file.close();
 }
 
-void GraphSLAM::SaveSurfelsToPLY(const std::string &output_folder, const std::string &output_name, const std::vector<std::shared_ptr<inseg_lib::Surfel>> &surfels,
+void GraphSLAM::SaveSurfelsToPLY(const std::string &output_dir, const std::string &output_name, const std::vector<std::shared_ptr<inseg_lib::Surfel>> &surfels,
         bool binary) {
 #ifdef WITH_TINYPLY
     struct TINYPLY_SURFEL {
@@ -526,7 +585,7 @@ void GraphSLAM::SaveSurfelsToPLY(const std::string &output_folder, const std::st
         if(surfel->label>0 && surfel->is_valid && surfel->is_stable)counter++;
 
     std::fstream file;
-    std::string output_file_dir = output_folder + output_name;
+    std::string output_file_dir = output_dir + output_name;
     std::cout<<"saving to "<< output_file_dir<<"\n"
         <<"nodes: "<<mGraph->nodes.size()<<"\n";
         // <<"edges: "<<mGraph->edges.size()<<"\n";
@@ -535,9 +594,9 @@ void GraphSLAM::SaveSurfelsToPLY(const std::string &output_folder, const std::st
     }
     std::cout<<"\n";
     if(!binary)
-        file.open(output_folder+"/"+output_name, std::ios::out);
+        file.open(output_dir+output_name, std::ios::out);
     else
-        file.open(output_folder+"/"+output_name, std::ios::out | std::ios::binary);
+        file.open(output_dir+output_name, std::ios::out | std::ios::binary);
     assert(file.is_open());
 
     file << "ply\n";
@@ -587,7 +646,7 @@ void GraphSLAM::SaveSurfelsToPLY(const std::string &output_folder, const std::st
             write_binary<float>(file,1.f);
         }
         // color
-        const bool segment_color = true;
+        const bool segment_color = false;
         if(!binary) {
             if (segment_color) {
                 const cv::Vec3b &color = inseg_lib::CalculateLabelColor(surfel->label);

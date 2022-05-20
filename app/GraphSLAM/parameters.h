@@ -12,6 +12,7 @@ struct Params{
     std::string save_name = "inseg.ply";
     int min_pyr_level=2;
     int inactive_frames = 200;
+    int active_frames_thre = 9999;
 
     float depth_edge_threshold = -1; // -1: use default.
 
@@ -20,7 +21,7 @@ struct Params{
     bool save=true;
     bool save_graph=true;
     bool save_graph_ply = true;
-    bool save_surfel_ply = true;
+    bool save_surfel_ply = false;
     bool save_time = true;
 
     /// Predict semantic scene graph
@@ -34,6 +35,12 @@ struct Params{
 
     bool verbose=false;
     int segment_filter=512;
+
+    /// Incorporated pose drift
+    float sigma_xy = 0.0;
+    float sigma_z = 0.0;
+    float sigma_yaw = 0.0;    // In degree unit.
+    int maximum_frame_index = 99999;    // Break the program at the maximum frame
 };
 
 void ParseCommondLine(int argc, char **argv, Params &params) {
@@ -52,7 +59,6 @@ void ParseCommondLine(int argc, char **argv, Params &params) {
                      "Filter out segment that has not enough surfels.");
     parser.addOption(pkgcname("depth_edge_threshold", &params.depth_edge_threshold),
                      "depth_edge_threshold for InSeg");
-    parser.addOption(pkgcname("inactive_thre", &params.inactive_frames),"Select inactive nodes");
 
     parser.addOption(pkgcname("rendered", &params.use_render), "use rendered depth");
     parser.addOption(pkgcname("full_prop", &params.full_prop), "return full prop or just the maximum.");
@@ -67,6 +73,13 @@ void ParseCommondLine(int argc, char **argv, Params &params) {
     parser.addOption(pkgcname("save_graph_ply", &params.save_graph_ply), "output graph as ply (with semantic id)");
     parser.addOption(pkgcname("save_surfel_ply", &params.save_surfel_ply), "output surfels to ply (inseg output)");
     parser.addOption(pkgcname("save_time", &params.save_time), "");
+
+    parser.addOption(pkgcname("sigma_xy",&params.sigma_xy),"",false);
+    parser.addOption(pkgcname("sigma_z",&params.sigma_z),"",false);
+    parser.addOption(pkgcname("sigma_yaw",&params.sigma_yaw),"",false);
+    parser.addOption(pkgcname("inactive_thre", &params.inactive_frames),"Select inactive nodes");
+    parser.addOption(pkgcname("active_thre",&params.active_frames_thre),"Remove nodes been active for too long",false);
+    parser.addOption(pkgcname("max_frames",&params.maximum_frame_index),"Maximum number of frames for non-GUI app",false);
 
     auto status = parser.showMsg(params.verbose);
     if(status<1)
@@ -91,9 +104,10 @@ PSLAM::ConfigPSLAM getConfig(const Params &params)
         configPslam.main_config.max_pyr_level = 4;
         configPslam.main_config.min_pyr_level = params.min_pyr_level;
         configPslam.inactive_frames_threshold = params.inactive_frames;
+        configPslam.active_frames_threshold = params.active_frames_thre;
 
         if(params.depth_edge_threshold == -1) {
-            std::cout<< "use predefined depth edge threshold: " << params.depth_edge_threshold;
+            std::cout<< "use predefined depth edge threshold: " << params.depth_edge_threshold<<"\n";
             if (configPslam.main_config.min_pyr_level == 1)
                 configPslam.inseg_config.depth_edge_threshold = 0.99f;
             else if (configPslam.main_config.min_pyr_level == 2)
@@ -101,7 +115,7 @@ PSLAM::ConfigPSLAM getConfig(const Params &params)
             else if (configPslam.main_config.min_pyr_level == 3)
                 configPslam.inseg_config.depth_edge_threshold = 0.98f;
         } else {
-            std::cout << "use custom depth edge threshold: " << params.depth_edge_threshold;
+            std::cout << "use custom depth edge threshold: " << params.depth_edge_threshold<<"\n";
             configPslam.inseg_config.depth_edge_threshold = params.depth_edge_threshold;
         }
     }

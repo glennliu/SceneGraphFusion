@@ -1,5 +1,9 @@
 #ifndef _H_PSLAM_CAMERA_PARAMETERS
 #define _H_PSLAM_CAMERA_PARAMETERS
+
+#include <string>
+#include <sstream>
+
 namespace PSLAM {
     struct CameraParameters {
         float cx, cy;
@@ -14,6 +18,19 @@ namespace PSLAM {
             this->cx = cx;
             this->cy = cy;
             this->scale = scale;
+        }
+        
+        std::string print()const{
+            std::stringstream str;
+            str<<"CamaterParameter\n"
+                <<"--width: "<<width<<"\n"
+                <<"--height: "<<height<<"\n"
+                <<"--fx: "<<fx<<"\n"
+                <<"--fy: "<<fy<<"\n"
+                <<"--cx: "<<cx<<"\n"
+                <<"--cy: "<<cy<<"\n"
+                <<"--scale: "<<scale<<"\n";
+            return str.str();
         }
     };
 }

@@ -17,7 +17,7 @@ This is the SceneGraphFusion c++ framework. For the network part of the code, ch
 This is a modified version of SceneGraphFusion. For the original version, please refer to Wu's branch [here](https://github.com/ShunChengWu/SceneGraphFusion). 
 
 The adopted functions in this branch are as follow,
-- Build active graph <img src="https://render.githubusercontent.com/render/math?math= \mathcal{G}^a"> and inactive graph <img src="https://render.githubusercontent.com/render/math?math= \mathcal{G}^i">. Those nodes have not been viewed for a while are transmitted to inactive graph. And active graph only maintains the recent observed nodes.
+- Build active graph <img src="https://render.githubusercontent.com/render/math?math=\mathcal{G}^a"> and inactive graph <img src="https://render.githubusercontent.com/render/math?math=\mathcal{G}^i">. Those nodes have not been viewed for a while are transmitted to inactive graph. And active graph only maintains the recent observed nodes.
 - Incorporate noise to camera pose. And verify the quality of scene graph under odometry drift.
 - Intall the ```libGraphSLAM``` so that it can be linked by other C++ project and ROS. 
 

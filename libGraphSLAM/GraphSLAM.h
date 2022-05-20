@@ -86,17 +86,19 @@ class TicToc
 
         void SaveGraph(const std::string &output_folder, bool fullProb);
 
-        void SaveSurfelsToPLY(int segment_filter, const std::string &output_folder, const std::string &output_name, bool binary);
+        void SaveSurfelsToPLY(int segment_filter, const std::string &output_dir, const std::string &output_name, bool binary);
 
         enum SAVECOLORMODE {
             SAVECOLORMODE_RGB, SAVECOLORMODE_SEGMENT, SAVECOLORMODE_INSTANCE, SAVECOLORMODE_SEMANTIC, SAVECOLORMODEL_PANOPTIC
         };
 
-        void SaveNodesToPLY(int segment_filter, const std::string &output_folder, SAVECOLORMODE saveColorMode, bool binary=false);
+        void SaveNodesToPLY(int segment_filter, const std::string &output_dir, 
+                SAVECOLORMODE saveColorMode, 
+                bool binary=false, bool inactive_graph_=false);
 
         void SaveSurfelsToPLY(const std::string &output_folder, const std::string &output_name,
                               const std::vector<std::shared_ptr<inseg_lib::Surfel>> &surfels, bool binary);
-
+        
         //////////
         /// Graph
         //////////
@@ -129,8 +131,8 @@ class TicToc
         // Graph
         ConfigPSLAM *mConfig;
         std::shared_ptr<Graph> mGraph;
-        // TODO: build active graph and inactive graph
-        std::shared_ptr<Graph> activeGraph;
+        std::shared_ptr<Graph> inactive_mGraph;
+        // std::shared_ptr<Graph> activeGraph;
 #ifdef COMPILE_WITH_GRAPHPRED
         GraphPredictorPtr mpGraphPredictor;
 #endif
@@ -141,6 +143,8 @@ class TicToc
                 int segment_filter, const std::vector<std::shared_ptr<inseg_lib::Surfel>> &surfels);
 
         int debug_index = 0;
+
+        void transitInactiveNodes(const size_t &timestamp);
 
     };
 }

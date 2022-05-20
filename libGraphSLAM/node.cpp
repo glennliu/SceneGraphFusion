@@ -6,9 +6,9 @@
 #include <algorithm>
 using namespace PSLAM;
 
-Node::Node(int label):
+Node::Node(int label, size_t timestamp):
 idx(label), instance_idx(0), mDebug(false), time_stamp(0),lastUpdatePropertySize(0),
-mbNeedUpdateNodeFeature(false),mIdxCounter(0) {
+mbNeedUpdateNodeFeature(false),mIdxCounter(0), time_stamp_active(timestamp) {
     last_class_predicted = Unknown();
     instance_idx=idx;
     centroid.setZero();

@@ -15,17 +15,25 @@
 
 using namespace PSLAM;
 
-Graph::Graph(const ConfigPSLAM *configPslam, bool useThread):mConfigPslam(configPslam),mbThread(useThread){
+Graph::Graph(const ConfigPSLAM *configPslam, bool useThread):
+    mConfigPslam(configPslam),mbThread(useThread),timestamp_latest(0){
     if(mbThread)
         mPools = std::make_unique<tools::TaskThreadPool>(std::thread::hardware_concurrency());
 }
 
+void Graph::updateTimeStamp(const size_t timestamp_)
+{
+    timestamp_latest = timestamp_;
+}
+
 int Graph::Add(const SurfelPtr &surfel) {
     const int index = surfel->GetLabel();
+    // size_t timestamp = 0;
     NodePtr node;
     {
         std::unique_lock<std::mutex> lock(mMutNode);
-        if(nodes.find(index) == nodes.end()) nodes.insert({index, std::make_shared<Node>(index)});
+        if(nodes.find(index) == nodes.end()) 
+            nodes.insert({index, std::make_shared<Node>(index, timestamp_latest)});
         node = nodes.at(index);
     }
     {
@@ -354,27 +362,68 @@ void Graph::RecordUpdateTime(const size_t &timestamp)
     }
 }
 
-std::set<int> 
-Graph::RemoveInactiveNodes(const size_t &timestamp, int inactive_threshold)
+
+// std::set<int> 
+void Graph::RemoveInactiveNodes(
+    const std::vector<int> &nodes_to_remove)
+    // const size_t &timestamp, int inactive_threshold)
 {
+    /*
     std::set<int> nodes_to_remove;
+    std::vector<SurfelPtr> inactive_surfels;
     if(nodes.empty()) return nodes_to_remove;
     int prev_nodes_number = nodes.size();
+    std::map<int,std::string> nodeid_to_semantic;
 
     // std::unique_lock<std::mutex> lock(this->mMutNode);
     for(const auto &node_itr:nodes){
         if((timestamp - node_itr.second->time_stamp_viewed) > inactive_threshold){
             nodes_to_remove.emplace(node_itr.first);
-            node_itr.second->DeactivateSurfels();
+            // node_itr.second->DeactivateSurfels();
+            for(auto &pair:node_itr.second->surfels){
+                auto &surfel = pair.second;
+                if(!surfel->is_valid || !surfel->is_stable) continue;
+                SurfelPtr inactive_sf = std::make_shared<inseg_lib::Surfel>();
+
+                inactive_sf->pos = surfel->pos;
+                inactive_sf->normal = surfel->normal;
+                inactive_sf->color = surfel->color;
+                inactive_sf->radius = surfel->radius;
+                inactive_sf->SetLabel(surfel->label);
+                inactive_sf->is_valid = true;
+                inactive_sf->is_stable = true;
+                surfel->is_valid = false;
+            }
+            nodeid_to_semantic.emplace(node_itr.first,node_itr.second->GetLabel());
         }   
     }
+    */
+    
     std::cout <<nodes_to_remove.size()<<" nodes to be removed out of "
-        << prev_nodes_number <<" nodes \n";
+        << nodes.size() <<" nodes... ";
     for(auto inactive_node:nodes_to_remove) RemoveNode(inactive_node);
     std::cout<<"Succeed\n";
 
-    return nodes_to_remove;
+    // return nodes_to_remove;
 }
+
+void Graph::labelNodes(
+    const std::map<int,std::string> &instanceid_to_semantic)
+{
+    for(const auto &instance_itr:instanceid_to_semantic){
+        auto node_ptr = nodes.find(instance_itr.first);
+        if(node_ptr==nodes.end()) continue;
+
+        std::pair<size_t,size_t> sizeAndEdge(10,10);
+        std::map<std::string,float> pd;
+        std::map<std::string,std::pair<size_t,size_t>> sizeAndEdges;
+        pd.emplace(instance_itr.second,1.0f);
+        sizeAndEdges.emplace(instance_itr.second,sizeAndEdge);
+        node_ptr->second->UpdatePrediction(pd,sizeAndEdges,true);
+    }
+}
+
+
 
 void Graph::UpdateSelectedNodes(
     const std::unordered_set<int> &filtered_selected_nodes, 
