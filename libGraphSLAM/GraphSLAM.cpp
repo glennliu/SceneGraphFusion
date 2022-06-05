@@ -124,9 +124,13 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
 {
     std::vector<int> inactive_nodes;
     std::vector<SurfelPtr> inactive_surfels;
+ 
+    std::map<int,std::string> instanceid_to_semantic;
+    std::map<int,Graph::TimeStampData> instance_timestamp;
+
     if(mGraph->nodes.empty()) return;
     int prev_nodes_number = mGraph->nodes.size();
-    std::map<int,std::string> instanceid_to_semantic;
+
 
     for(const auto &node_itr:mGraph->nodes){
         //TODO: remove nodes been created a long period ago
@@ -137,7 +141,9 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
             active_frame_count > mConfig->active_frames_threshold){
             inactive_nodes.emplace_back(node_itr.first);
             // node_itr.second->DeactivateSurfels();
+            Graph::TimeStampData node_timestamp;
 
+            // Nodes
             for(auto &pair:node_itr.second->surfels){
                 auto &surfel = pair.second;
                 if(surfel->is_valid && surfel->is_stable){
@@ -156,19 +162,21 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
                 surfel->is_valid = false;
                 // inseg_->map().SetInvalid(surfel->label);
             }
-            // std::cout
-            //     <<"["<<node_itr.second->idx<<", "
-            //     <<node_itr.second->instance_idx<<", "
-            //     <<node_itr.second->GetLabel()
-            //     <<"], ";
-            //TODO: check the "same part" segments have their instance id merged
+            node_timestamp.time_created = node_itr.second->time_stamp_active;
+            node_timestamp.time_viewed = node_itr.second->time_stamp_viewed;
+
             instanceid_to_semantic.emplace(node_itr.second->instance_idx,node_itr.second->GetLabel());
+            instance_timestamp.emplace(node_itr.second->instance_idx,node_timestamp);
+            // Edges
+            for(const auto &ed:node_itr.second->edges){
+                inactive_mGraph->AddEdge(ed);
+            }
         }   
     }
-    // std::cout<<"\n";
-
+    
     mGraph->RemoveInactiveNodes(inactive_nodes);
     inactive_mGraph->labelNodes(instanceid_to_semantic);
+    inactive_mGraph->labelTimestamp(instance_timestamp);
     std::cout<<"-InactiveGraph: "<<inactive_mGraph->nodes.size()<<" nodes\n";
 
 }
@@ -719,24 +727,28 @@ void GraphSLAM::SaveSurfelsToPLY(const std::string &output_dir, const std::strin
 }
 
 #ifdef COMPILE_WITH_JSON
-json11::Json GraphSLAM::GetSceneGraph(bool full){
-    std::unique_lock<std::mutex> lock(mGraph->mMutNode);
+json11::Json GraphSLAM::GetSceneGraph(
+    bool full,bool export_src_graph){
+    std::shared_ptr<Graph> graph_ptr;
+    if(export_src_graph) graph_ptr= mGraph;
+    else graph_ptr = inactive_mGraph;
+    std::unique_lock<std::mutex> lock(graph_ptr->mMutNode);
     json11::Json::object nodes;
     json11::Json::object edges;
     json11::Json::object colors;
     json11::Json::object kfs;
     json11::Json::object prediction;
     if(!full) {
-        for (const auto &node : mGraph->nodes) {
+        for (const auto &node : graph_ptr->nodes) {
             if (node.second->GetLabel() == Node::Unknown()) continue;
             nodes[std::to_string(node.first)] = node.second->GetLabel();
         }
 
         std::map<std::string, json11::Json::array> tmp_edges;
-        for (const auto &edge : mGraph->edges){
+        for (const auto &edge : graph_ptr->edges){
             if (edge.second->GetLabel() == Edge::Same())
-                if (mGraph->nodes.at(edge.second->nodeFrom)->GetLabel() !=
-                    mGraph->nodes.at(edge.second->nodeTo)->GetLabel())
+                if (graph_ptr->nodes.at(edge.second->nodeFrom)->GetLabel() !=
+                    graph_ptr->nodes.at(edge.second->nodeTo)->GetLabel())
                     continue;
             std::string name = std::to_string(edge.second->nodeFrom) + "_" + std::to_string(edge.second->nodeTo);
 //            if(edge.second->label == Edge::None());
@@ -747,22 +759,26 @@ json11::Json GraphSLAM::GetSceneGraph(bool full){
             edges[pair.first] = pair.second;
         }
     } else {
-        for (const auto &node : mGraph->nodes) {
+        for (const auto &node : graph_ptr->nodes) {
             if (node.second->GetLabel() == Node::Unknown()) continue;
-            json11::Json::object probs;
+            json11::Json::object probs, node_json;
             if (node.second->mClsProb.empty()) continue;
             for(const auto &pair:node.second->mClsProb) {
 //                if(std::isinf(log(pair.second)))
 //                    SCLOG(ERROR) << "get inf from " << pair.second << " of them " << pair.first;
                 probs[pair.first] = pair.second==0?0 :log(pair.second); // softmax -> logsoftmax
             }
-            nodes[std::to_string(node.first)] = probs;
+            node_json["label"] = probs;
+            node_json["time_created"] = (int)node.second->time_stamp_active;
+            node_json["time_viewed"] = (int)node.second->time_stamp_viewed;
+            nodes[std::to_string(node.second->instance_idx)] = node_json;
+            // nodes[std::to_string(node.first)]["label"] = probs;
         }
 
-        for(const auto &edge : mGraph->edges) {
+        for(const auto &edge : graph_ptr->edges) {
             if (edge.second->GetLabel() == Edge::Same())
-                if (mGraph->nodes.at(edge.second->nodeFrom)->GetLabel() !=
-                    mGraph->nodes.at(edge.second->nodeTo)->GetLabel())
+                if (graph_ptr->nodes.at(edge.second->nodeFrom)->GetLabel() !=
+                    graph_ptr->nodes.at(edge.second->nodeTo)->GetLabel())
                     continue;
             std::string name = std::to_string(edge.second->nodeFrom) + "_" + std::to_string(edge.second->nodeTo);
             json11::Json::object probs;

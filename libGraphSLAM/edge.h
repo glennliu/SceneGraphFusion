@@ -6,7 +6,7 @@
 #include <map>
 #include <mutex>
 namespace PSLAM {
-    class Edge {
+    class Edge { // Directed Edge
     public:
         inline static std::string None() {return "none";}
         inline static std::string Same() {return "same part";}
@@ -27,6 +27,8 @@ namespace PSLAM {
         void UpdatePrediction(const std::map<std::string, float> &prop, bool fusion);
 
         std::string label = None();
+
+        bool consistent = false;
     };
     typedef std::shared_ptr<Edge> EdgePtr;
     static inline EdgePtr MakeEdgePtr(){return std::make_shared<Edge>();}

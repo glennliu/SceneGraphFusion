@@ -205,9 +205,11 @@ int main(int argc, char** argv) {
 
         if(params.save_graph) {
             auto scan_id = tools::PathTool::getFileName(tools::PathTool::find_parent_folder(path, 1));
-            auto predictions = graphSlam.GetSceneGraph(params.full_prop);
+            auto predictions_src = graphSlam.GetSceneGraph(params.full_prop);
+            auto predictions_tar = graphSlam.GetSceneGraph(params.full_prop,false);
             json11::Json::object json;
-            json[scan_id] = predictions;
+            json["active_map"] = predictions_src;
+            json["inactive_map"] = predictions_tar;
             ORUtils::JsonUtils::Dump(json, output_dir + "predictions.json");
         }
 

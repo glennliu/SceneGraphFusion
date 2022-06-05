@@ -332,9 +332,14 @@ void GraphSLAMGUI::MainUI(){
     if(ImGui::Button("Save Graph")) {
         printf("Saving graph  to %s \n",pth_out.c_str());
         auto scan_id = tools::PathTool::getFileName(tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 1));
-        auto predictions = mpGraphSLAM->GetSceneGraph(save_full_prop);
         json11::Json::object json;
-        json[scan_id] = predictions;
+        // auto predictions = mpGraphSLAM->GetSceneGraph(save_full_prop);
+        // json[scan_id] = predictions;
+        auto predictions_src = mpGraphSLAM->GetSceneGraph(save_full_prop);
+        auto predictions_tar = mpGraphSLAM->GetSceneGraph(save_full_prop,false);
+        json["active_map"] = predictions_src;
+        json["inactive_map"] = predictions_tar;
+        
         ORUtils::JsonUtils::Dump(json, pth_out + "predictions.json");
         printf("Saved successfully\n");
 

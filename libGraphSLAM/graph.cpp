@@ -202,7 +202,7 @@ int Graph::AddEdge(const EdgePtr &edge){
                 // add new
                 if (nodes.find(edge->nodeFrom) == nodes.end()) {
                     SCLOG(WARNING)
-                    << "Failed to add an edge since the source node " << edge->nodeFrom << " was removed.";
+                        << "Failed to add an edge since the source node " << edge->nodeFrom << " was removed.";
                     return -1;
                 }
                 if (nodes.find(edge->nodeTo) == nodes.end()) {
@@ -423,7 +423,15 @@ void Graph::labelNodes(
     }
 }
 
-
+void Graph::labelTimestamp(const std::map<int,TimeStampData> &instance_timestamp)
+{
+    for(const auto &instance_itr:instance_timestamp){
+        auto node_ptr = nodes.find(instance_itr.first);
+        if(node_ptr==nodes.end()) continue;
+        node_ptr->second->time_stamp_active = instance_itr.second.time_created;
+        node_ptr->second->time_stamp_viewed = instance_itr.second.time_viewed;
+    }
+}
 
 void Graph::UpdateSelectedNodes(
     const std::unordered_set<int> &filtered_selected_nodes, 

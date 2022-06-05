@@ -18,6 +18,11 @@ namespace PSLAM {
 
 class Graph: public inseg_lib::SegmentsInterface {
 public:
+    struct TimeStampData{
+        size_t time_created;
+        size_t time_viewed;
+    }; 
+
     ~Graph() {}
     Graph(const ConfigPSLAM *configPslam, bool useThread);
 
@@ -57,18 +62,23 @@ public:
 
     void Wait();
 
-    //TODO: check
     void labelNodes(const std::map<int,std::string> &instanceid_to_semantic);
 
+    void labelTimestamp(const std::map<int,TimeStampData> &instance_timestamp);
     // ===
     // thread
     // ===
     std::map<int, NodePtr> nodes;
-    std::map<std::pair<int,int>, EdgePtr > edges;
+    std::map<std::pair<int,int>, EdgePtr > edges; // Directed edge
+    std::map<std::pair<int,int>, EdgePtr > edges_ud; // Undirected edges; Just for visualization in loop detection
     std::set<int> nodes_to_update;
     std::mutex mMutNode; // when access nodes
     std::mutex mMutEdge; // when access edges
     std::mutex mMutThis;
+
+    // SLAM
+    //TODO:
+    std::map<std::string,std::vector<int>> nodes_group;
 private:
     const ConfigPSLAM *mConfigPslam;
     void RemoveSurfelFromNode(const SurfelPtr &surfel);

@@ -76,7 +76,7 @@ class TicToc
 #endif
 
 #ifdef COMPILE_WITH_JSON
-        json11::Json GetSceneGraph(bool full);
+        json11::Json GetSceneGraph(bool full, bool export_src_graph = true);
 #endif
 
         //////////

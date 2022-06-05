@@ -47,9 +47,13 @@ namespace PSLAM {
 
         void UpdateSelectedNode(const size_t time, const size_t filter_size, const size_t num_pts, bool force);
 
+        void UpdateSurfaceNormal();
+
         int GetPointSize();
 
         bool DeactivateSurfels();
+
+        void extractBox2D();
     public:
         std::unordered_map<int, SurfelPtr> surfels;
         std::unordered_set<EdgePtr> edges;
@@ -60,22 +64,27 @@ namespace PSLAM {
         bool mDebug;
         // Timestamp that it is predicted
         size_t time_stamp;
+        // Timestamp it is created or labelled active
+        size_t time_stamp_active; 
         // Timestamp it is latest viewed
         size_t time_stamp_viewed;
-        // Timestamp it is labelled active
-        size_t time_stamp_active;
 
-        // threads
+        // threads 
         std::vector<SurfelPtr> selected_surfels;
-        Eigen::Vector3f mCentroid, mStd, mBBox_min, mBBox_max;
+        Eigen::Vector3f mCentroid, mStd, mBBox_min, mBBox_max;  // Update at selected nodes to update
         size_t lastUpdatePropertySize;
         std::atomic_bool mbNeedUpdateNodeFeature;
 
+        // Update at initialization
         Eigen::Vector3f centroid, pos_sum;
         Eigen::Vector3f bbox_max, bbox_min;
-
+        Eigen::Vector3f sNormal, sNormalStd;    // For surface like wall and floor
+        Eigen::Matrix<float,4,2> corners;
+        cv::Rect2f rect;
+        
         /// Shared between
         std::unordered_set<size_t> neighbors;
+        std::unordered_set<size_t> neighbor_nodes;  // Seperately maintained
 
         /// Only access by thread_gcc
 #ifdef COMPILE_WITH_GRAPHPRED
@@ -88,9 +97,11 @@ namespace PSLAM {
         /// Prediction related members
         // stores the class and its probability
         mutable std::mutex mMutPred;
-        std::map<std::string, float> mClsProb;
-        std::map<std::string, float> mClsWeight;
+        std::map<std::string, float> mClsProb;  // softmax
+        std::map<std::string, float> mClsWeight;    // init 1
         std::map<std::string, std::pair<size_t, size_t>> mSizeAndEdge;
+        bool seedFlag = false;
+        bool consistency = false;
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     private:

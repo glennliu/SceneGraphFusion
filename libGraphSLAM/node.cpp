@@ -308,7 +308,54 @@ void Node::UpdateSelectedNode(const size_t time, const size_t filter_size, const
     time_stamp = time;
 }
 
+void Node::UpdateSurfaceNormal()
+{
+    // if(last_class_predicted!="wall"&&last_class_predicted!="floor") return;
+    sNormal.setZero();
+    int num_sf = surfels.size();
+    // Cal mean normal
+    for(auto sf:surfels){
+        sNormal += sf.second->normal;
+    }
+    sNormal = sNormal / num_sf;
+    sNormal.normalize();
+    // Cal normal variance
+    for(auto sf:surfels){
+        Eigen::Vector3f n_vec = sf.second->normal;
+        n_vec.normalize();
+        for(int i=0;i<3;i++)
+            sNormalStd[i] += pow(n_vec[i] - sNormal[i],2);
+    }
+    for(int i=0;i<3;i++)
+        sNormalStd[i] = sqrt(sNormalStd[i]/(float)num_sf);
+}
+
 const std::string Node::GetLabel() const {
     Lock lock(mMutPDLabel);
     return last_class_predicted;
+}
+
+void Node::extractBox2D()
+{
+    Eigen::Vector2f pa,pb,pc,pd;
+    Eigen::Vector2f po;
+    float inflate_val = 0.5;
+
+    if (last_class_predicted == "wall"){
+        pa<<bbox_min(0)-inflate_val,bbox_min(1)-inflate_val;
+        pc<<bbox_max(0)+inflate_val,bbox_max(1)+inflate_val;
+    }
+    else{
+        pa = bbox_min.head(2); pc = bbox_max.head(2);
+    }
+    
+    pb<<pc.x(),pa.y();
+    pd<<pa.x(),pc.y();
+    corners.row(0) = pa;
+    corners.row(1) = pb;
+    corners.row(2) = pc;
+    corners.row(3) = pd;
+
+    rect = cv::Rect2f(bbox_min(0),bbox_min(1),
+        bbox_max(0)-bbox_min(0),bbox_max(1)-bbox_min(1));
 }
