@@ -63,7 +63,7 @@ void Graph::Merge(const int seg_idx_to, const int seg_idx_from) {
         }
         RemoveNode(seg_idx_from);
 
-        SCLOG(VERBOSE) << "Merge segment " << seg_idx_to << " and " << seg_idx_from;
+        SCLOG(WARNING) << "Merge segment " << seg_idx_to << " and " << seg_idx_from;
 
         // add surfels from node_remove to node_to
         SCLOG(VERBOSE) << "remove surfels";
@@ -420,6 +420,7 @@ void Graph::labelNodes(
         pd.emplace(instance_itr.second,1.0f);
         sizeAndEdges.emplace(instance_itr.second,sizeAndEdge);
         node_ptr->second->UpdatePrediction(pd,sizeAndEdges,true);
+        node_ptr->second->validFlag = true;
     }
 }
 
@@ -447,12 +448,23 @@ void Graph::UpdateSelectedNodes(
         }
         if(mbThread)
             mPools->runTask( std::bind(&PSLAM::Node::UpdateSelectedNode, node.get(), time, mConfigPslam->filter_num_node, mConfigPslam->n_pts, force) );
-        else
+        else{
             node->UpdateSelectedNode(time, mConfigPslam->filter_num_node, mConfigPslam->n_pts, force);
+
+        }
     }
     SCLOG(VERBOSE) << "selected surfels updated.";
+    // InstancePtr instance_toadd = std::make_shared<Instance>(3);
+    // Instance toadd(3);
+
 }
 
+Instance *Graph::findInstance(int id)
+{
+    auto instance_itr= instances.find(id);
+    if(instance_itr==instances.end())return nullptr;
+    else return instance_itr->second.get();
+}
 
 void Graph::Wait(){
     SCLOG(VERBOSE) << "wait update properties to finish";

@@ -36,6 +36,9 @@ namespace PSLAM {
         const Eigen::Matrix4f GetDriftedPose() const { 
             return accumulated_drift * m_pose; 
         }
+        const cv::Mat& getRenderDepth()const{
+            return m_d_render;
+        }
 
         void SetFrameIndex(int idx) {frame_index = idx;}
 
@@ -51,6 +54,26 @@ namespace PSLAM {
             std::cout<<"Framewise pose drift is set to \n"<< drift<<"\n";
         }
 
+        void printCamParam(bool depth = true){
+            CameraParameters *cam_to_print;
+            if(depth){
+                cam_to_print = &m_cam_param_d;
+                std::cout<<"DepthParams\n";
+                }
+            else {
+                std::cout<<"RgbParams\n";
+                cam_to_print = &m_cam_param_rgb;
+            }
+            std::cout
+                <<"--width: "<<cam_to_print->width<<"\n"
+                <<"--height: "<<cam_to_print->height<<"\n"
+                <<"--fx: "<<cam_to_print->fx<<"\n"
+                <<"--fy: "<<cam_to_print->fy<<"\n"
+                <<"--cx: "<<cam_to_print->cx<<"\n"
+                <<"--cy: "<<cam_to_print->cy<<"\n";
+                // <<"--scale: "<<cam_to_print->scale<<"\n";
+        }
+
         const int& GetFrameIndex() const { return frame_index; }
 
         const int& GetFinalIndex() const { return frame_index_max; }
@@ -62,10 +85,12 @@ namespace PSLAM {
         std::shared_ptr<DatasetDefinitionBase> m_dataset;
         int frame_index = 0, frame_index_max = 0;
         cv::Mat m_rgb, m_d;
+        cv::Mat m_d_render;
         Eigen::Matrix4f m_pose;
         CameraParameters m_cam_param_rgb, m_cam_param_d;
 
-        // 4Dof drift [x y height yaw]
+        // 4Dof drift [x y height yaw]; 
+        // x,y,z are in unit of mm; yaw is in the unit of degree.
         // In each incoming keyframe, the drift is incorporated.
         Eigen::Matrix4f drift = Eigen::Matrix4f::Identity();
 

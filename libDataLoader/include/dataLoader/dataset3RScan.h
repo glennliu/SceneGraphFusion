@@ -22,6 +22,7 @@ namespace PSLAM {
             suffix_depth = ".depth.pgm";
             suffix_rgb = ".color.jpg";
             suffix_pose = ".pose.txt";
+            suffix_depth_render = ".rendered.depth.png";
             if (rotate_pose_img) {
                 suffix_depth = ".depth.pgm";
                 suffix_pose = ".pose.txt";

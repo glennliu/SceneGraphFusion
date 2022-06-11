@@ -112,6 +112,13 @@ bool DatasetLoader_3RScan::Retrieve() {
                                             m_dataset->prefix_rgb,
                                             m_dataset->suffix_rgb,
                                             m_dataset->number_length);
+    std::string depthRenderFilename = GetFileName(m_dataset->folder,
+                                        m_dataset->folder_depth,
+                                        m_dataset->prefix_depth,
+                                        m_dataset->suffix_depth_render,
+                                        m_dataset->number_length);
+    SCLOG(INFO)<<"Trying "<<depthRenderFilename<<"...";
+    SCLOG(INFO)<<"Trying "<<depthFilename<<"...";
     pose_file_name_ = GetFileName(m_dataset->folder,
                                   m_dataset->folder_pose,
                                   m_dataset->prefix_pose,
@@ -121,7 +128,6 @@ bool DatasetLoader_3RScan::Retrieve() {
     if (!isExist) {
         frame_index = 0;
         SCLOG(VERBOSE) << "Cannot find path:\n" << depthFilename << "\n" << colorFilename;
-
         return false;
     }
     m_d = cv::imread(depthFilename, -1);
@@ -135,6 +141,19 @@ bool DatasetLoader_3RScan::Retrieve() {
 
     if (isFileExist(colorFilename.c_str())) {
         m_rgb = cv::imread(colorFilename, -1);
+    }
+
+    // Rendered depth
+    if(isFileExist(depthRenderFilename.c_str())){
+        m_d_render = cv::imread(depthRenderFilename,-1);
+        for(size_t c=0;c<(size_t)m_d_render.cols;++c){
+            for(size_t r=0;r<(size_t)m_d_render.rows;++r){
+                if(m_d_render.at<unsigned short>(r,c)>=m_dataset->max_depth)
+                    m_d_render.at<unsigned short>(r,c) = 0;
+            }
+        }
+        if(m_dataset->rotate_pose_img)
+            cv::rotate(m_d_render,m_d_render,cv::ROTATE_90_COUNTERCLOCKWISE);
     }
 
     if (m_dataset->rotate_pose_img) {

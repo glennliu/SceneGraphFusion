@@ -70,7 +70,7 @@ void GraphSLAM::SaveModel(const std::string &output_folder) const {
 
 void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &depthImage,const Eigen::Matrix4f *pose) {
     TicToc timer;
-    std::cout<<"Processing frame "<< idx <<" ...\n";
+    SCLOG(INFO)<<"Processing frame "<< idx;
     mTimeStamp = idx;
     mGraph->updateTimeStamp(mTimeStamp);
 
@@ -140,13 +140,15 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
         if(inactive_frame_count>mConfig->inactive_frames_threshold||
             active_frame_count > mConfig->active_frames_threshold){
             inactive_nodes.emplace_back(node_itr.first);
-            // node_itr.second->DeactivateSurfels();
+
             Graph::TimeStampData node_timestamp;
 
             // Nodes
             for(auto &pair:node_itr.second->surfels){
                 auto &surfel = pair.second;
-                if(surfel->is_valid && surfel->is_stable){
+
+                // Move surfels of nodes to inactive graph
+                if( node_itr.second->validFlag &&surfel->is_valid && surfel->is_stable){
                     SurfelPtr inactive_sf = std::make_shared<inseg_lib::Surfel>();
 
                     inactive_sf->pos = surfel->pos;
@@ -162,15 +164,17 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
                 surfel->is_valid = false;
                 // inseg_->map().SetInvalid(surfel->label);
             }
-            node_timestamp.time_created = node_itr.second->time_stamp_active;
-            node_timestamp.time_viewed = node_itr.second->time_stamp_viewed;
 
-            instanceid_to_semantic.emplace(node_itr.second->instance_idx,node_itr.second->GetLabel());
-            instance_timestamp.emplace(node_itr.second->instance_idx,node_timestamp);
-            // Edges
-            for(const auto &ed:node_itr.second->edges){
-                inactive_mGraph->AddEdge(ed);
+            if(node_itr.second->validFlag){
+                // Move node attributes to inactive graph
+                node_timestamp.time_created = node_itr.second->time_stamp_active;
+                node_timestamp.time_viewed = node_itr.second->time_stamp_viewed;
+                instanceid_to_semantic.emplace(node_itr.second->instance_idx,node_itr.second->GetLabel());
+                instance_timestamp.emplace(node_itr.second->instance_idx,node_timestamp);
             }
+
+            // Edges
+            for(const auto &ed:node_itr.second->edges) inactive_mGraph->AddEdge(ed);
         }   
     }
     

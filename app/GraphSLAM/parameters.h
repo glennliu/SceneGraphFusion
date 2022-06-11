@@ -11,8 +11,8 @@ struct Params{
     std::string pth_model;
     std::string save_name = "inseg.ply";
     int min_pyr_level=2;
-    int inactive_frames = 200;
-    int active_frames_thre = 9999;
+    int inactive_frames = 200; // Move to inactive if unseen longer than the threshold
+    int active_frames_thre = 9999;  // 
 
     float depth_edge_threshold = -1; // -1: use default.
 

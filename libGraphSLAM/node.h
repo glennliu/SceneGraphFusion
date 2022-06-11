@@ -53,7 +53,9 @@ namespace PSLAM {
 
         bool DeactivateSurfels();
 
-        void extractBox2D();
+        cv::Rect2f get2DBox()const;
+
+        // bool isValidType()const; // Check those valid nodes for loop
     public:
         std::unordered_map<int, SurfelPtr> surfels;
         std::unordered_set<EdgePtr> edges;
@@ -78,9 +80,8 @@ namespace PSLAM {
         // Update at initialization
         Eigen::Vector3f centroid, pos_sum;
         Eigen::Vector3f bbox_max, bbox_min;
-        Eigen::Vector3f sNormal, sNormalStd;    // For surface like wall and floor
-        Eigen::Matrix<float,4,2> corners;
-        cv::Rect2f rect;
+        Eigen::Vector3f sNormal, Normal_sum, sNormalStd;    // For surface like wall and floor
+        // cv::Rect2f rect;
         
         /// Shared between
         std::unordered_set<size_t> neighbors;
@@ -100,8 +101,9 @@ namespace PSLAM {
         std::map<std::string, float> mClsProb;  // softmax
         std::map<std::string, float> mClsWeight;    // init 1
         std::map<std::string, std::pair<size_t, size_t>> mSizeAndEdge;
-        bool seedFlag = false;
-        bool consistency = false;
+        bool validFlag = false; // Check size, semantic type
+        // bool seedFlag = false;
+        // bool consistency = false;
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     private:

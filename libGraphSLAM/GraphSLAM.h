@@ -68,6 +68,8 @@ class TicToc
 
         Graph *GetGraph() { return mGraph.get(); }
 
+        Graph *GetInactiveGraph() {return inactive_mGraph.get();}
+
         ConfigPSLAM *GetConfig(){return mConfig;}
 
 

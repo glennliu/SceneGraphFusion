@@ -15,6 +15,7 @@ mbNeedUpdateNodeFeature(false),mIdxCounter(0), time_stamp_active(timestamp) {
     pos_sum.setZero();
     bbox_max.setZero();
     bbox_min.setZero();
+    Normal_sum.setZero();
 }
 
 int Node::Add(const SurfelPtr &surfel) {
@@ -42,7 +43,9 @@ int Node::Add(const SurfelPtr &surfel) {
     {
         Lock lock(mMutNode);
         pos_sum += surfel->pos;
+        Normal_sum += surfel->normal.normalized();
         centroid = pos_sum / size;
+        sNormal = Normal_sum / size;
         if(size == 1){
             bbox_min=bbox_max=surfel->pos;
         } else
@@ -302,7 +305,11 @@ void Node::UpdateSelectedNode(const size_t time, const size_t filter_size, const
         for(const auto& surfel:surfels)
             if(surfel.second->is_valid && surfel.second->is_stable) valid_surfels++;
     }
+    
+    {// Attributes used in loop detection
 
+    }
+    
     mbNeedUpdateNodeFeature=true;
     lastUpdatePropertySize = new_size;
     time_stamp = time;
@@ -335,27 +342,9 @@ const std::string Node::GetLabel() const {
     return last_class_predicted;
 }
 
-void Node::extractBox2D()
+cv::Rect2f Node::get2DBox()const
 {
-    Eigen::Vector2f pa,pb,pc,pd;
-    Eigen::Vector2f po;
-    float inflate_val = 0.5;
-
-    if (last_class_predicted == "wall"){
-        pa<<bbox_min(0)-inflate_val,bbox_min(1)-inflate_val;
-        pc<<bbox_max(0)+inflate_val,bbox_max(1)+inflate_val;
-    }
-    else{
-        pa = bbox_min.head(2); pc = bbox_max.head(2);
-    }
-    
-    pb<<pc.x(),pa.y();
-    pd<<pa.x(),pc.y();
-    corners.row(0) = pa;
-    corners.row(1) = pb;
-    corners.row(2) = pc;
-    corners.row(3) = pd;
-
-    rect = cv::Rect2f(bbox_min(0),bbox_min(1),
+    return cv::Rect2f(bbox_min(0),bbox_min(1),
         bbox_max(0)-bbox_min(0),bbox_max(1)-bbox_min(1));
 }
+

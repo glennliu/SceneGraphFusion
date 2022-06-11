@@ -32,6 +32,7 @@ namespace PSLAM {
         std::string suffix_depth = "";
         std::string suffix_rgb = "";
         std::string suffix_pose = "";
+        std::string suffix_depth_render ="";
 
         std::string folder_depth = "";
         std::string folder_rgb = "";

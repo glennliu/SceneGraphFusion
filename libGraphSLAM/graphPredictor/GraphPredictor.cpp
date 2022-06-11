@@ -216,6 +216,7 @@ void GraphPredictor::Process_IMPL() {
             for(auto &nn : selected_nodes_level.at(l-1))
                 selected_nodes_level.at(l)[nn.first] = nn.second;
         }
+
         /// Save the current size and edge of all levels
         std::map<int,std::pair<size_t,size_t>> sizeAndEdge;
         {
@@ -874,6 +875,7 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
             size_t num_cls = objcls_prob[0].GetTensorTypeAndShapeInfo().GetShape()[1];
             assert(mLabels.size() == num_cls);
             SCLOG(VERBOSE) << "write back.";
+            
             for (size_t i = 0; i < n_nodes; ++i) {
                 const auto &node = selected_nodes.at(i);
                 std::map<std::string, float> m;
@@ -885,6 +887,18 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 }
                 node->UpdatePrediction(m, mm, mConfigPslam->use_fusion);
 
+                const int latest_instance_id(node->instance_idx);
+                auto instance_ptr = mpGraph->findInstance(latest_instance_id);
+                if(!instance_ptr){
+                    InstancePtr instance_toadd;
+                    instance_toadd = std::make_shared<Instance>(latest_instance_id);
+                    instance_toadd->setLabel(node->GetLabel());
+                    mpGraph->instances.emplace(latest_instance_id,instance_toadd);
+                }
+                else{
+                    instance_ptr->setLabel(node->GetLabel());
+                }
+
                 std::set<int> checked_nodes;
                 auto has_same_nodes = has_same_part_nodes[node->idx];
                 CTICK("[GraphPredictor::UpdatePrediction]1.lock_updateNode");
@@ -894,6 +908,8 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 }
                 CTOCK("[GraphPredictor::UpdatePrediction]1.lock_updateNode");
             }
+        
+            // delete instances;
         }
     }
     if(1) /// Edge
@@ -979,26 +995,29 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
             std::unique_lock<std::mutex> lock(mpGraph->mMutNode);
             find_nodes_has_same_part(nodes, pair->idx, idx_same_part, found_nodes, checked_nodes);
 
-
             // check if there are nodes previously has the same part but removed later
             std::set<int> should_seperate;
             for(auto i : pre_same_nodes)
                 if(found_nodes.find(i) == found_nodes.end()) should_seperate.insert(i);
             for(auto i : should_seperate) {
                 nodes.at(i)->instance_idx = i;
+              
             }
-
 
             if(found_nodes.empty()) continue;
             // find the smallest idx as their instance id
             found_nodes.insert(pair->idx);// add itself
             int instance_id = int(pair->idx);
             nodes.at(pair->idx)->instance_idx = instance_id; // set to itself, in case "same part" relationship is removed.
+            // std::map<int, InstancePtr> *instances;
+            // instances = &mpGraph->instances;
             for(auto& i : found_nodes)
                 if(i < instance_id) instance_id = i;
-            for(auto& i : found_nodes)
+            for(auto& i : found_nodes){
                 nodes.at(i)->instance_idx = instance_id;
-
+                // mpGraph->instances.at(instance_id)->addNode(i);
+                
+            }
 
             SCLOG(DEBUG) << pair->idx << ": There are  " << found_nodes.size() << " have same part relationship with node " << pair->idx << ". The instance id is: " << instance_id;
             std::stringstream ss;

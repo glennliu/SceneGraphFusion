@@ -13,6 +13,7 @@
 #include "config.h"
 #include "node.h"
 #include "edge.h"
+#include "instance.h"
 
 namespace PSLAM {
 
@@ -65,12 +66,17 @@ public:
     void labelNodes(const std::map<int,std::string> &instanceid_to_semantic);
 
     void labelTimestamp(const std::map<int,TimeStampData> &instance_timestamp);
+    
+    Instance *findInstance(int id);
+
     // ===
     // thread
     // ===
     std::map<int, NodePtr> nodes;
+    std::map<int, InstancePtr> instances;  
     std::map<std::pair<int,int>, EdgePtr > edges; // Directed edge
     std::map<std::pair<int,int>, EdgePtr > edges_ud; // Undirected edges; Just for visualization in loop detection
+
     std::set<int> nodes_to_update;
     std::mutex mMutNode; // when access nodes
     std::mutex mMutEdge; // when access edges

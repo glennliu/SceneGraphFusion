@@ -9,6 +9,9 @@
 #include <ORUtils/Logging.h>
 #include <ORUtils/PathTool.hpp>
 #include <chrono>
+// #include <opencv4/opencv2/imgproc.hpp>
+// #include <opencv4/opencv2/imgcodecs.hpp>
+// #include <opencv4/opencv2/highgui.hpp>
 #include "parameters.h"
 
 #ifdef COMPILE_WITH_PSLAM_GUI
@@ -144,6 +147,8 @@ int main(int argc, char** argv) {
     PSLAM::ConfigPSLAM configPslam = getConfig(params);
     std::cout<<configPslam.print()
         <<dataset_loader_->GetDataBase()->print();
+    dataset_loader_->printCamParam(true);
+    dataset_loader_->printCamParam(false);
 
     PSLAM::GraphSLAM graphSlam(&configPslam, dataset_loader_->GetCamParamDepth());
 
@@ -165,6 +170,8 @@ int main(int argc, char** argv) {
         const Eigen::Matrix4f pose = dataset_loader_->GetDriftedPose().inverse();
         auto rgb = dataset_loader_->GetRGBImage();
         auto d   = dataset_loader_->GetDepthImage();
+        // auto d_render = dataset_loader_->getRenderDepth();
+        // std::cout<<d_render.size()<<","<<d_render.type()<<"\n";
         std::cout<<"loader "<< timer.toc_ms()<<"ms, ";
 
         if(renderer) {
@@ -172,8 +179,23 @@ int main(int argc, char** argv) {
             t_p.topRightCorner<3, 1>() /= 1000.f;
             t_p.transposeInPlace();
             cv::Mat t_rgb;
+            std::cout<<d.size()<<"\n";
             renderer->Render(t_rgb,d,t_p,dataset_loader_->GetCamParamDepth());
+            std::cout<<d.size()<<","<<d.type()<<"\n";
         }
+
+        // {// Debug depth
+            // cv::Mat depth0,depth1;
+            // cv::Mat vizimg;
+            // d.convertTo(depth0,CV_8UC1);
+            // d_render.convertTo(depth1,CV_8UC1);
+            // cv::applyColorMap(depth0,depth0,cv::COLORMAP_AUTUMN);
+            // cv::applyColorMap(depth1,depth1,cv::COLORMAP_AUTUMN);
+            // cv::vconcat(depth0,depth1,vizimg);
+            // cv::imshow("Debug",vizimg);
+            // cv::waitKey(100);
+        // }
+        
         std::cout<<"render "<< timer.toc_ms()<<"ms, ";
 
         CTICK("[ALL]0.all");

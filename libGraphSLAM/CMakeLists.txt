@@ -22,7 +22,6 @@ IF(BUILD_GRAPHPRED)
 ENDIF(BUILD_GRAPHPRED)
 
 
-
 ADD_LIBRARY(${targetname} ${sources} ${headers})
 TARGET_LINK_LIBRARIES(${targetname}
         PUBLIC  ${INSEG_LIB}
@@ -73,4 +72,6 @@ if(INSTALL_OPTION)
     )
 
     install(FILES ${headers} DESTINATION include/${targetname})
+
+    # message("header ${headers} \n")
 endif()

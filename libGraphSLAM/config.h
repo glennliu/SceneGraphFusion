@@ -27,10 +27,12 @@ namespace PSLAM {
         /// model path
         std::string pth_model;
 
-        int filter_num_node;
+        int filter_num_node;    // Minimum segment size to be predicted
 
 //        int predict_when_have_at_least_n_node;
         size_t n_pts;
+
+        // int min_surfels;    // Only larger segments are valid
 
         float neighbor_margin; // mm
 
@@ -38,7 +40,7 @@ namespace PSLAM {
         float update_thres_node_size;
         /// Update a node if its time stamp is older than n
         int update_thres_time_stamp;
-        /// Set the node as inactive if its timestamp is older than n
+        /// Set the node as inactive if its last viewed timestamp is older than n
         int inactive_frames_threshold;
         /// Set the node as inactive if it has been labelled as active larger than the threshold
         int active_frames_threshold;
