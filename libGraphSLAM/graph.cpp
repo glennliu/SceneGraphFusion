@@ -319,7 +319,7 @@ void Graph::RemoveNode(int idx) {
             RemoveEdge(pair);
         }
     } catch (std::out_of_range &e) {
-        SCLOG(ERROR) << e.what();
+        SCLOG(ERROR) <<"NODE! "<< e.what();
     }
 }
 
@@ -363,48 +363,26 @@ void Graph::RecordUpdateTime(const size_t &timestamp)
 }
 
 
-// std::set<int> 
 void Graph::RemoveInactiveNodes(
-    const std::vector<int> &nodes_to_remove)
+    const std::set<int> &nodes_to_remove)
     // const size_t &timestamp, int inactive_threshold)
-{
-    /*
-    std::set<int> nodes_to_remove;
-    std::vector<SurfelPtr> inactive_surfels;
-    if(nodes.empty()) return nodes_to_remove;
-    int prev_nodes_number = nodes.size();
-    std::map<int,std::string> nodeid_to_semantic;
-
-    // std::unique_lock<std::mutex> lock(this->mMutNode);
-    for(const auto &node_itr:nodes){
-        if((timestamp - node_itr.second->time_stamp_viewed) > inactive_threshold){
-            nodes_to_remove.emplace(node_itr.first);
-            // node_itr.second->DeactivateSurfels();
-            for(auto &pair:node_itr.second->surfels){
-                auto &surfel = pair.second;
-                if(!surfel->is_valid || !surfel->is_stable) continue;
-                SurfelPtr inactive_sf = std::make_shared<inseg_lib::Surfel>();
-
-                inactive_sf->pos = surfel->pos;
-                inactive_sf->normal = surfel->normal;
-                inactive_sf->color = surfel->color;
-                inactive_sf->radius = surfel->radius;
-                inactive_sf->SetLabel(surfel->label);
-                inactive_sf->is_valid = true;
-                inactive_sf->is_stable = true;
-                surfel->is_valid = false;
-            }
-            nodeid_to_semantic.emplace(node_itr.first,node_itr.second->GetLabel());
-        }   
-    }
-    */
-    
+{    
     std::cout <<nodes_to_remove.size()<<" nodes to be removed out of "
         << nodes.size() <<" nodes... ";
-    for(auto inactive_node:nodes_to_remove) RemoveNode(inactive_node);
+    for(auto inactive_node:nodes_to_remove) {
+        if(nodes.find(inactive_node)!=nodes.end())
+            RemoveNode(inactive_node);
+    }
     std::cout<<"Succeed\n";
+}
 
-    // return nodes_to_remove;
+void Graph::RemoveInactiveInstances(const std::set<int> &instances_to_remove)
+{
+    if(instances_to_remove.empty()||instances.empty()) return;
+    for(auto instance_id:instances_to_remove){
+        instances.erase(instance_id);
+    }
+
 }
 
 void Graph::labelNodes(
@@ -437,25 +415,61 @@ void Graph::labelTimestamp(const std::map<int,TimeStampData> &instance_timestamp
 void Graph::UpdateSelectedNodes(
     const std::unordered_set<int> &filtered_selected_nodes, 
     const size_t time,const bool force) {
-    SCLOG(VERBOSE) << "Update selected surfels.";
+    // SCLOG(VERBOSE) << "Update selected surfels.";
     for (auto node_idx : filtered_selected_nodes) {
         if (node_idx == 0 ) continue;
         NodePtr node;
         {
             std::unique_lock<std::mutex> lock(mMutNode);
+            // std::cout<<node_idx<<",";
             node = this->nodes.at(node_idx);
             if (node->surfels.size() < (size_t)mConfigPslam->filter_num_node) continue;
         }
+        instances_to_update.emplace(node->instance_idx);
         if(mbThread)
             mPools->runTask( std::bind(&PSLAM::Node::UpdateSelectedNode, node.get(), time, mConfigPslam->filter_num_node, mConfigPslam->n_pts, force) );
         else{
             node->UpdateSelectedNode(time, mConfigPslam->filter_num_node, mConfigPslam->n_pts, force);
-
         }
     }
+    std::cout<<"\n";
     SCLOG(VERBOSE) << "selected surfels updated.";
-    // InstancePtr instance_toadd = std::make_shared<Instance>(3);
-    // Instance toadd(3);
+}
+
+void Graph::updateSelectedInstances(bool enable_init_new)
+{
+    if(instances_to_update.empty()) return;
+
+
+    for(auto idx:instances_to_update){
+        auto instance_itr = instances.find(idx);
+        if(instance_itr!=instances.end()){  
+            instance_itr->second->updateAttributes();
+        }
+    }
+    SCLOG(INFO)<<"Updated instances";
+    instances_to_update.clear();
+}
+
+void Graph::createInstances(const size_t time,
+    const std::unordered_set<int> &nodes_toadd)
+{
+    if(nodes_toadd.empty()) return;
+    int num_created = 0;
+    for(auto node_idx:nodes_toadd){
+        auto node_ptr = nodes.find(node_idx);
+        if(node_ptr==nodes.end()) continue;
+        node_ptr->second->UpdateSelectedNode(time,mConfigPslam->filter_num_node, mConfigPslam->n_pts,false);
+        auto instance_ptr = instances.find(node_idx);
+        if(instance_ptr==instances.end()){
+            InstancePtr instance_toadd = std::make_shared<Instance>(node_ptr->second);
+            instances.emplace(node_ptr->second->idx,instance_toadd);
+            num_created++;
+        }
+    }
+
+    SCLOG(INFO)<<num_created<<" instances are added";
+
 
 }
 

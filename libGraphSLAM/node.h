@@ -70,6 +70,7 @@ namespace PSLAM {
         size_t time_stamp_active; 
         // Timestamp it is latest viewed
         size_t time_stamp_viewed;
+        bool mergedFlag;    // If merged with same part nodes, set true.
 
         // threads 
         std::vector<SurfelPtr> selected_surfels;
@@ -101,7 +102,7 @@ namespace PSLAM {
         std::map<std::string, float> mClsProb;  // softmax
         std::map<std::string, float> mClsWeight;    // init 1
         std::map<std::string, std::pair<size_t, size_t>> mSizeAndEdge;
-        bool validFlag = false; // Check size, semantic type
+        bool validFlag = false; // Check size, semantic type. Updated from SgSlam.h
         // bool seedFlag = false;
         // bool consistency = false;
 
@@ -117,5 +118,6 @@ namespace PSLAM {
         std::string last_class_predicted = Unknown();
     };
     typedef std::shared_ptr<Node> NodePtr;
+    typedef std::shared_ptr<const Node> ConstNodePtr;
     // static inline NodePtr MakeNodePtr(int label) { return std::make_shared<Node>(label,0); }
 }  // namespace inseg_lib

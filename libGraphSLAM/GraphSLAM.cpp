@@ -114,75 +114,131 @@ void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &
 #endif
 
     transitInactiveNodes(mTimeStamp);
-    std::cout<< mGraph->nodes.size() <<" Nodes, "
-        <<inseg_->map().surfels.size() <<" Surfels\n";
+    std::cout<<"Active graph: "
+        << mGraph->instances.size() <<" Instances, "
+        << mGraph->nodes.size() <<" Nodes, "
+        << inseg_->map().surfels.size() <<" Surfels\n";
     std::cout<<"Processed in "<<timer.toc_ms()<<" ms\n";
 
 }
 
 void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
 {
-    std::vector<int> inactive_nodes;
-    std::vector<SurfelPtr> inactive_surfels;
- 
-    std::map<int,std::string> instanceid_to_semantic;
-    std::map<int,Graph::TimeStampData> instance_timestamp;
+    std::set<int> instances_tomove;
+    std::set<int> nodes_tomove; 
+    std::unordered_set<int> nodes_toadd;
+    // std::map<int,std::string> instanceid_to_semantic;
+    // std::map<int,Graph::TimeStampData> instance_timestamp;
 
-    if(mGraph->nodes.empty()) return;
-    int prev_nodes_number = mGraph->nodes.size();
+    if(mGraph->instances.empty()) return;
+    SCLOG(INFO)<<"Removing instances...";
 
+    for(const auto &instance_itr:mGraph->instances){
+        const int inactive_frame_count = (int)timestamp - instance_itr.second->time_stamp.lastest_viewed;
+        const int active_frame_count   = (int)timestamp - instance_itr.second->time_stamp.created;
 
-    for(const auto &node_itr:mGraph->nodes){
-        //TODO: remove nodes been created a long period ago
-        const int inactive_frame_count = timestamp - node_itr.second->time_stamp_viewed;
-        const int active_frame_count = timestamp-node_itr.second->time_stamp_active;
+        if(inactive_frame_count > mConfig->inactive_frames_threshold ||
+            active_frame_count > mConfig->active_frames_threshold)     
+        { // Select inactive instances
+            if(instance_itr.second->parent && instance_itr.second->stable)
+            {
+                instances_tomove.emplace(instance_itr.first);
+                // Graph::TimeStampData node_timestamp;
+                std::map<std::string, float> pd;
+                std::map<std::string, std::pair<size_t, size_t>> sizeAndEdge;
+                size_t earliest_created_time(99999999);
+                // std::cout<< instance_itr.first<<","<<instance_itr.second->label<<": ";
 
-        if(inactive_frame_count>mConfig->inactive_frames_threshold||
-            active_frame_count > mConfig->active_frames_threshold){
-            inactive_nodes.emplace_back(node_itr.first);
+                // Transmit surfels
+                for(auto node_id:*instance_itr.second->getNodeList()){
+                    auto node_ptr = mGraph->nodes.find(node_id);
+                    if(node_ptr==mGraph->nodes.end()){
+                        SCLOG(WARNING)<<"Instance "<<instance_itr.first
+                            <<" is trying to transmit a non-exist node "<<node_id;
+                        continue;
+                    }
 
-            Graph::TimeStampData node_timestamp;
+                    auto ret = nodes_tomove.emplace(node_id);
+                    if(!ret.second){
+                        SCLOG(ERROR)<<"Transmiting a node "<<node_id
+                            << " belong to multiple instance. This should not happen";
+                        continue;
+                    }
+                    
+                    for(auto &pair:node_ptr->second->surfels){
+                        auto &surfel = pair.second;
 
-            // Nodes
-            for(auto &pair:node_itr.second->surfels){
-                auto &surfel = pair.second;
+                        // Move surfels of nodes to inactive graph
+                        if( surfel->is_valid && surfel->is_stable){
+                            SurfelPtr inactive_sf = std::make_shared<inseg_lib::Surfel>();
 
-                // Move surfels of nodes to inactive graph
-                if( node_itr.second->validFlag &&surfel->is_valid && surfel->is_stable){
-                    SurfelPtr inactive_sf = std::make_shared<inseg_lib::Surfel>();
+                            inactive_sf->pos = surfel->pos;
+                            inactive_sf->normal = surfel->normal;
+                            inactive_sf->color = surfel->color;
+                            inactive_sf->radius = surfel->radius;
+                            inactive_sf->SetLabel(instance_itr.first);
+                            inactive_sf->is_valid = true;
+                            inactive_sf->is_stable = true;
 
-                    inactive_sf->pos = surfel->pos;
-                    inactive_sf->normal = surfel->normal;
-                    inactive_sf->color = surfel->color;
-                    inactive_sf->radius = surfel->radius;
-                    inactive_sf->SetLabel(node_itr.second->instance_idx);
-                    inactive_sf->is_valid = true;
-                    inactive_sf->is_stable = true;
-
-                    inactive_mGraph->Add(inactive_sf);
+                            inactive_mGraph->Add(inactive_sf);
+                        }
+                        surfel->is_valid = false;
+                        // inseg_->map().SetInvalid(surfel->label);
+                    }
+                    
+                    if(node_id == instance_itr.first){
+                        pd = node_ptr->second->mClsProb;
+                        sizeAndEdge = node_ptr->second->mSizeAndEdge;
+                    }
+                    earliest_created_time =std::min(earliest_created_time, node_ptr->second->time_stamp_active);
                 }
-                surfel->is_valid = false;
-                // inseg_->map().SetInvalid(surfel->label);
-            }
 
-            if(node_itr.second->validFlag){
-                // Move node attributes to inactive graph
-                node_timestamp.time_created = node_itr.second->time_stamp_active;
-                node_timestamp.time_viewed = node_itr.second->time_stamp_viewed;
-                instanceid_to_semantic.emplace(node_itr.second->instance_idx,node_itr.second->GetLabel());
-                instance_timestamp.emplace(node_itr.second->instance_idx,node_timestamp);
-            }
+                nodes_toadd.emplace(instance_itr.first);
 
-            // Edges
-            for(const auto &ed:node_itr.second->edges) inactive_mGraph->AddEdge(ed);
-        }   
+                // Prediction and time stamp
+                auto node_ptr_inactive = inactive_mGraph->nodes.find(instance_itr.first);
+                if(node_ptr_inactive!=inactive_mGraph->nodes.end()){
+                    node_ptr_inactive->second->UpdatePrediction(pd,sizeAndEdge,true);
+                    node_ptr_inactive->second->time_stamp_active = earliest_created_time;
+                    // std::min(
+                    //     node_ptr_inactive->second->time_stamp_active,instance_itr.second->time_stamp.created);
+                    node_ptr_inactive->second->time_stamp_viewed = instance_itr.second->time_stamp.lastest_viewed;
+                }
+                // Edges
+                // for(const auto &ed:instance_itr.second->edges) inactive_mGraph->AddEdge(ed);
+            }  
+            else if(instance_itr.second->parent && instance_itr.second->getNodeList()->size()==1){  
+                //Parent but unstable instance
+                instances_tomove.emplace(instance_itr.first);
+                auto node_ptr = mGraph->nodes.find(instance_itr.first);
+                if(node_ptr!=mGraph->nodes.end()&&node_ptr->second->instance_idx==instance_itr.first){
+                    auto ret = nodes_tomove.emplace(instance_itr.first);
+                    node_ptr->second->DeactivateSurfels();
+                }
+            } 
+        }
     }
-    
-    mGraph->RemoveInactiveNodes(inactive_nodes);
-    inactive_mGraph->labelNodes(instanceid_to_semantic);
-    inactive_mGraph->labelTimestamp(instance_timestamp);
-    std::cout<<"-InactiveGraph: "<<inactive_mGraph->nodes.size()<<" nodes\n";
+    // std::cout<<"\n";
 
+    for(auto node:mGraph->nodes){
+        if(node.second->GetLabel() == Node::Unknown() && node.second->instance_idx == node.first){
+            if(timestamp - node.second->time_stamp_viewed > (size_t)mConfig->inactive_frames_threshold
+                || timestamp-node.second->time_stamp_active >(size_t) mConfig->active_frames_threshold){
+                nodes_tomove.emplace(node.first);      
+                node.second->DeactivateSurfels();     
+            }
+        }
+    }
+
+    SCLOG(INFO)<<"Selected nodes and instances to transmit";
+    
+    mGraph->RemoveInactiveNodes(nodes_tomove);
+    mGraph->RemoveInactiveInstances(instances_tomove);
+    inactive_mGraph->createInstances(timestamp, nodes_toadd);
+
+    std::cout<<"InactiveGraph: "
+        <<inactive_mGraph->instances.size()<<" instances, "
+        <<inactive_mGraph->nodes.size()<<" nodes\n";
 }
 
 void GraphSLAM::AddSelectedNodeToUpdate(int idx){
@@ -200,6 +256,8 @@ void GraphSLAM::AddSelectedNodeToUpdate(int idx){
             filtered_selected_nodes.insert(node_idx);
     SCLOG(VERBOSE) << "Update selected surfels.";
     mGraph->UpdateSelectedNodes(filtered_selected_nodes, idx, false);
+    mGraph->updateSelectedInstances();
+
     mGraph->nodes_to_update.clear();
 
     if(!mConfig->use_thread) mpGraphPredictor->RUN(mGraph.get()); // if not use thread, call it every run

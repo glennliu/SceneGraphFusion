@@ -887,15 +887,14 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 }
                 node->UpdatePrediction(m, mm, mConfigPslam->use_fusion);
 
-                const int latest_instance_id(node->instance_idx);
-                auto instance_ptr = mpGraph->findInstance(latest_instance_id);
+                // const int latest_instance_id(node->idx);
+                auto instance_ptr = mpGraph->findInstance(node->idx);
                 if(!instance_ptr){
                     InstancePtr instance_toadd;
-                    instance_toadd = std::make_shared<Instance>(latest_instance_id);
-                    instance_toadd->setLabel(node->GetLabel());
-                    mpGraph->instances.emplace(latest_instance_id,instance_toadd);
+                    instance_toadd = std::make_shared<Instance>(node);
+                    mpGraph->instances.emplace(node->idx,instance_toadd);
                 }
-                else{
+                else if(instance_ptr->parent){
                     instance_ptr->setLabel(node->GetLabel());
                 }
 
@@ -909,7 +908,6 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 CTOCK("[GraphPredictor::UpdatePrediction]1.lock_updateNode");
             }
         
-            // delete instances;
         }
     }
     if(1) /// Edge
@@ -1000,26 +998,31 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
             for(auto i : pre_same_nodes)
                 if(found_nodes.find(i) == found_nodes.end()) should_seperate.insert(i);
             for(auto i : should_seperate) {
-                nodes.at(i)->instance_idx = i;
-              
+                nodes.at(i)->instance_idx = i; 
+                mpGraph->instances.at(i)->reInitiate();
             }
-
+            
             if(found_nodes.empty()) continue;
             // find the smallest idx as their instance id
             found_nodes.insert(pair->idx);// add itself
             int instance_id = int(pair->idx);
+            SCLOG(DEBUG) << pair->idx << ": There are  " << found_nodes.size() << " have same part relationship with node " << pair->idx << ". The instance id is: " << instance_id;
+
             nodes.at(pair->idx)->instance_idx = instance_id; // set to itself, in case "same part" relationship is removed.
-            // std::map<int, InstancePtr> *instances;
-            // instances = &mpGraph->instances;
+
             for(auto& i : found_nodes)
                 if(i < instance_id) instance_id = i;
             for(auto& i : found_nodes){
+                auto node_ = nodes.at(i);
+                node_->instance_idx = instance_id;
                 nodes.at(i)->instance_idx = instance_id;
-                // mpGraph->instances.at(instance_id)->addNode(i);
-                
+                if(instance_id!=i) {
+                    auto child_instance = mpGraph->instances.find(i);
+                    if(child_instance!=mpGraph->instances.end()) child_instance->second->parent = false;
+                    mpGraph->instances.at(instance_id)->addNode(node_);
+                }
             }
 
-            SCLOG(DEBUG) << pair->idx << ": There are  " << found_nodes.size() << " have same part relationship with node " << pair->idx << ". The instance id is: " << instance_id;
             std::stringstream ss;
             for (auto s : found_nodes) {
                 ss << s << " ";

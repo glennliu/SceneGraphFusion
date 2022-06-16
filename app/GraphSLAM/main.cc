@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
         const Eigen::Matrix4f pose = dataset_loader_->GetDriftedPose().inverse();
         auto rgb = dataset_loader_->GetRGBImage();
         auto d   = dataset_loader_->GetDepthImage();
-        // auto d_render = dataset_loader_->getRenderDepth();
+        auto d_render = dataset_loader_->getRenderDepth();
         // std::cout<<d_render.size()<<","<<d_render.type()<<"\n";
         std::cout<<"loader "<< timer.toc_ms()<<"ms, ";
 
@@ -184,8 +184,8 @@ int main(int argc, char** argv) {
             std::cout<<d.size()<<","<<d.type()<<"\n";
         }
 
-        // {// Debug depth
-            // cv::Mat depth0,depth1;
+        {// Debug depth
+            cv::Mat depth0,depth1;
             // cv::Mat vizimg;
             // d.convertTo(depth0,CV_8UC1);
             // d_render.convertTo(depth1,CV_8UC1);
@@ -194,12 +194,19 @@ int main(int argc, char** argv) {
             // cv::vconcat(depth0,depth1,vizimg);
             // cv::imshow("Debug",vizimg);
             // cv::waitKey(100);
-        // }
+            d.copyTo(depth0);
+            cv::rotate(depth0,depth0,cv::ROTATE_90_CLOCKWISE);
+            std::stringstream render_depth_path;
+            render_depth_path<< path <<"/frame-"<<std::setfill('0')
+                <<std::setw(6)<<(latest_index-1)<<".rendered.depth.png";
+            cv::imwrite(render_depth_path.str(),depth0);
+        }
         
         std::cout<<"render "<< timer.toc_ms()<<"ms, ";
 
         CTICK("[ALL]0.all");
         graphSlam.ProcessFrame(dataset_loader_->GetFrameIndex(), rgb, d, &pose);
+        std::cout<<pose<<"\n";
         CTOCK("[ALL]0.all");
         std::cout<<"slam "<< timer.toc_ms()<<"ms\n";
     }

@@ -54,19 +54,24 @@ public:
         const std::unordered_set<int> &filtered_selected_nodes, 
         const size_t time, const bool force);
 
+    void updateSelectedInstances(bool enable_init_new=false);
+
+    void createInstances(const size_t time, const std::unordered_set<int> &nodes_toadd);
+
     // For the nodes are updated, recrod their timestamp
     void RecordUpdateTime(const size_t &timestamp);
+    
     //
-    // std::set<int> 
-    void RemoveInactiveNodes(const std::vector<int> &nodes_to_remove);
-        // const size_t &timestamp, int inactive_threshold = 200);
+    void RemoveInactiveNodes(const std::set<int> &nodes_to_remove);
+
+    void RemoveInactiveInstances(const std::set<int> &instances_to_remove);
 
     void Wait();
 
     void labelNodes(const std::map<int,std::string> &instanceid_to_semantic);
 
     void labelTimestamp(const std::map<int,TimeStampData> &instance_timestamp);
-    
+
     Instance *findInstance(int id);
 
     // ===
@@ -78,6 +83,7 @@ public:
     std::map<std::pair<int,int>, EdgePtr > edges_ud; // Undirected edges; Just for visualization in loop detection
 
     std::set<int> nodes_to_update;
+    std::set<int> instances_to_update;
     std::mutex mMutNode; // when access nodes
     std::mutex mMutEdge; // when access edges
     std::mutex mMutThis;

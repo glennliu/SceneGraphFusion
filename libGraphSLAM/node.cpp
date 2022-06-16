@@ -8,7 +8,7 @@ using namespace PSLAM;
 
 Node::Node(int label, size_t timestamp):
 idx(label), instance_idx(0), mDebug(false), time_stamp(0),lastUpdatePropertySize(0),
-mbNeedUpdateNodeFeature(false),mIdxCounter(0), time_stamp_active(timestamp) {
+mbNeedUpdateNodeFeature(false),mIdxCounter(0), time_stamp_active(timestamp), mergedFlag(false) {
     last_class_predicted = Unknown();
     instance_idx=idx;
     centroid.setZero();
@@ -142,6 +142,7 @@ void Node::UpdatePrediction(
             }
         }
     }
+    
     // find the newest with maximum prob
     if(mClsProb.empty()) return;
     {
@@ -192,7 +193,7 @@ int Node::GetPointSize() {
 
 bool Node::DeactivateSurfels()
 {
-    Lock Lock(mMutSurfel);
+    // Lock Lock(mMutSurfel);
     for(auto &pair:surfels){
         auto &surfel = pair.second;
         surfel->is_valid = false;
