@@ -16,9 +16,9 @@ namespace PSLAM {
             if(inputeType == DATASET_DETECT){
                 std::cerr << "detect data type: ";
                 // if(pth.find(".sens") != std::string::npos || pth.find("scene") != std::string::npos) {
-                if(pth.find(".sens") != std::string::npos || pth.find("scene") != std::string::npos) {
-                    inputeType = DATASET_SCENENN;
-                    std::cerr << "SceneNN\n";
+                if(pth.find("ScanNet") != std::string::npos) {
+                    inputeType = DATASET_SCANNET;
+                    std::cerr << "ScanNet\n";
                 } 
                 else {
                     inputeType = DATASET_3RSCAN;

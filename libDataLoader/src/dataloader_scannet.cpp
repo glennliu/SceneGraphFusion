@@ -37,6 +37,7 @@ DatasetLoader_ScanNet::DatasetLoader_ScanNet(std::shared_ptr<DatasetDefinitionBa
         int width,height;
         f >> fx >> fy >> cx >> cy >> width >> height;
         m_cam_param_d.Set(width,height,fx,fy,cx,cy);
+        std::cout<<"Build ScanNet dataloader\n";
     }
 }
 

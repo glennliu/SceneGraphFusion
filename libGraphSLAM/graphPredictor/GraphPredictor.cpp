@@ -891,7 +891,7 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 auto instance_ptr = mpGraph->findInstance(node->idx);
                 if(!instance_ptr){
                     InstancePtr instance_toadd;
-                    instance_toadd = std::make_shared<Instance>(node);
+                    instance_toadd = std::make_shared<Instance>(node,0.001f);
                     mpGraph->instances.emplace(node->idx,instance_toadd);
                 }
                 else if(instance_ptr->parent){

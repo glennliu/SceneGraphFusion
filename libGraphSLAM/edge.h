@@ -29,6 +29,7 @@ namespace PSLAM {
         std::string label = None();
 
         bool consistent = false;
+        float distance = 0.0f;
     };
     typedef std::shared_ptr<Edge> EdgePtr;
     static inline EdgePtr MakeEdgePtr(){return std::make_shared<Edge>();}

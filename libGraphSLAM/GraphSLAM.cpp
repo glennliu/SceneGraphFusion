@@ -73,6 +73,7 @@ void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &
     SCLOG(INFO)<<"Processing frame "<< idx;
     mTimeStamp = idx;
     mGraph->updateTimeStamp(mTimeStamp);
+    inactive_mGraph->updateTimeStamp(mTimeStamp);
 
     if(pose){
         pose_ = *pose;
@@ -146,8 +147,8 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
                 // Graph::TimeStampData node_timestamp;
                 std::map<std::string, float> pd;
                 std::map<std::string, std::pair<size_t, size_t>> sizeAndEdge;
-                size_t earliest_created_time(99999999);
-                // std::cout<< instance_itr.first<<","<<instance_itr.second->label<<": ";
+                // size_t dominant_node_createtime(0);
+                // size_t dominant_node_size(0);
 
                 // Transmit surfels
                 for(auto node_id:*instance_itr.second->getNodeList()){
@@ -160,8 +161,10 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
 
                     auto ret = nodes_tomove.emplace(node_id);
                     if(!ret.second){
-                        SCLOG(ERROR)<<"Transmiting a node "<<node_id
-                            << " belong to multiple instance. This should not happen";
+                        SCLOG(WARNING)<<"Transmiting a node "<<node_id
+                            << " belong to multiple instance."
+                            << " inactive frames: "<<inactive_frame_count
+                            << " active frames: "<<active_frame_count;
                         continue;
                     }
                     
@@ -190,7 +193,7 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
                         pd = node_ptr->second->mClsProb;
                         sizeAndEdge = node_ptr->second->mSizeAndEdge;
                     }
-                    earliest_created_time =std::min(earliest_created_time, node_ptr->second->time_stamp_active);
+                    // dominant_node_createtime =std::min(dominant_node_createtime, node_ptr->second->time_stamp_active);
                 }
 
                 nodes_toadd.emplace(instance_itr.first);
@@ -199,7 +202,7 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
                 auto node_ptr_inactive = inactive_mGraph->nodes.find(instance_itr.first);
                 if(node_ptr_inactive!=inactive_mGraph->nodes.end()){
                     node_ptr_inactive->second->UpdatePrediction(pd,sizeAndEdge,true);
-                    node_ptr_inactive->second->time_stamp_active = earliest_created_time;
+                    node_ptr_inactive->second->time_stamp_active = instance_itr.second->time_stamp.created;
                     // std::min(
                     //     node_ptr_inactive->second->time_stamp_active,instance_itr.second->time_stamp.created);
                     node_ptr_inactive->second->time_stamp_viewed = instance_itr.second->time_stamp.lastest_viewed;
@@ -234,7 +237,7 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
     
     mGraph->RemoveInactiveNodes(nodes_tomove);
     mGraph->RemoveInactiveInstances(instances_tomove);
-    inactive_mGraph->createInstances(timestamp, nodes_toadd);
+    inactive_mGraph->createInstances(timestamp, nodes_toadd,0.001f);
 
     std::cout<<"InactiveGraph: "
         <<inactive_mGraph->instances.size()<<" instances, "

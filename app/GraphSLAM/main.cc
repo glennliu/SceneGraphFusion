@@ -112,7 +112,11 @@ int main(int argc, char** argv) {
 #endif
     params.pth_out = params.dataset_dir+"/"+params.scan_name+"/output";
     if (params.save) tools::PathTool::check_and_create_folder(params.pth_out);
-    auto path = params.dataset_dir+"/"+params.scan_name+"/sequence";//params.pth_in;
+    std::string path;
+    if(params.dataset_dir.find("ScanNet")!=std::string::npos)
+        path = params.dataset_dir+"/"+params.scan_name+"/"+params.scan_name+".sens";
+    else 
+        path = params.dataset_dir+"/"+params.scan_name+"/sequence";//params.pth_in;
     int latest_index = 0;
     // if (path.find(".txt") != std::string::npos) {
     //     std::ifstream file(path);
@@ -121,7 +125,7 @@ int main(int argc, char** argv) {
     // }
     
 
-    SCLOG(INFO) << "Buliding data loader...";
+    SCLOG(INFO) << "Buliding data loader from "<<path;
     std::shared_ptr<PSLAM::DatasetLoader_base> dataset_loader_;
     dataset_loader_.reset(PSLAM::DataLoaderFactory::Make(path));
     dataset_loader_->Reset();

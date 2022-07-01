@@ -452,7 +452,7 @@ void Graph::updateSelectedInstances(bool enable_init_new)
 }
 
 void Graph::createInstances(const size_t time,
-    const std::unordered_set<int> &nodes_toadd)
+    const std::unordered_set<int> &nodes_toadd,float position_scale)
 {
     if(nodes_toadd.empty()) return;
     int num_created = 0;
@@ -462,7 +462,7 @@ void Graph::createInstances(const size_t time,
         node_ptr->second->UpdateSelectedNode(time,mConfigPslam->filter_num_node, mConfigPslam->n_pts,false);
         auto instance_ptr = instances.find(node_idx);
         if(instance_ptr==instances.end()){
-            InstancePtr instance_toadd = std::make_shared<Instance>(node_ptr->second);
+            InstancePtr instance_toadd = std::make_shared<Instance>(node_ptr->second,position_scale);
             instances.emplace(node_ptr->second->idx,instance_toadd);
             num_created++;
         }

@@ -16,7 +16,7 @@ namespace PSLAM
             size_t lastest_viewed;
         };
 
-        Instance(const NodePtr &node_ptr);//(int id);
+        Instance(const NodePtr &node_ptr,float position_scale_, int min_surfels_=5000);
 
         void addNode(const NodePtr &node_ptr);
 
@@ -44,9 +44,9 @@ namespace PSLAM
 
         public:
             //TODO: ensure the unit is consistent
-            Eigen::Vector3f centroid;   // in mm
+            Eigen::Vector3f centroid;   // in meters
             Eigen::Vector3f normal;
-            Eigen::Vector3f bboxmin, bboxmax;
+            Eigen::Vector3f bboxmin, bboxmax;   // in meters
             TimeStamp time_stamp;
             unsigned int num_sfs;
             std::string label;
@@ -57,6 +57,8 @@ namespace PSLAM
             bool active_flag;
         private:
             int instance_id;
+            float position_scale;
+            float min_surfels;  // Threshold to mark stable
             NodeList nodelist;
             std::vector<ConstNodePtr> nodes;
             

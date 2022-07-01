@@ -1181,13 +1181,15 @@ void GraphSLAMGUI::SetRender(int width, int height, const std::string &path, boo
     if(path.find("scene") != std::string::npos) {
         auto parent_folder = tools::PathTool::find_parent_folder(path, 1);
         scan_id = tools::PathTool::getFileName(path);
-        folder =  tools::PathTool::find_parent_folder(path, 1);
+        folder =  tools::PathTool::find_parent_folder(path, 2);
         type = PSLAM::MeshRenderType_ScanNet;
+        std::cout<<"Render as ScanNet type\n";
     } else {
         auto seq_folder = tools::PathTool::find_parent_folder(path,1);
         scan_id = tools::PathTool::getFileName(seq_folder);
         folder = tools::PathTool::find_parent_folder(seq_folder,1);
         type = PSLAM::MeshRenderType_3RScan;
+        std::cout<<"Render as 3RScan type\n";
     }
     std::cout<<type<<","<<folder<<","<<scan_id<<"\n";
     mMeshRender.reset( PSLAM::MakeMeshRenderer(width, height, folder,scan_id,type,align) );
