@@ -9,6 +9,7 @@ SET(sources
         src/dataloader_scannet.cpp
         src/dataloader_3rscan.cpp
         src/dataloader_scenenn.cpp
+        src/dataloader_realsense.cpp
         ScanNetLoader/sensorData.cpp
 )
 SET(headers

@@ -3,6 +3,9 @@ SET(targetname libGraphSLAM)
 INCLUDE(UseEigen3)
 INCLUDE(UseOpenCV)
 
+# set(Open3D_DIR "/home/uav/lch_ws/open3d_cpu/Open3D/install")
+# find_package(Open3D REQUIRED PATHS ${Open3D_DIR})
+
 SET(INSTALL_OPTION ON)
 
 if(APPLE)
@@ -23,8 +26,9 @@ ENDIF(BUILD_GRAPHPRED)
 
 
 ADD_LIBRARY(${targetname} ${sources} ${headers})
-TARGET_LINK_LIBRARIES(${targetname}
-        PUBLIC  ${INSEG_LIB}
+TARGET_LINK_LIBRARIES(${targetname} PUBLIC  
+    ${INSEG_LIB}
+    # Open3D::Open3D
 )
 TARGET_INCLUDE_DIRECTORIES(${targetname} 
     PUBLIC 

@@ -12,9 +12,6 @@ namespace PSLAM {
         void Reset() override;
         bool Retrieve() override;
 
-        // Sigma yaw is in degree unit.
-        // void setFramewiseDrift(const float sigma_xy, const float sigma_z,
-        //     const float sigma_yaw);
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     private:
         void incorporate_drift();

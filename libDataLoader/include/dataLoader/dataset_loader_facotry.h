@@ -2,9 +2,11 @@
 #include "dataset3RScan.h"
 #include "datasetScanNet.h"
 #include "datasetSceneNN.h"
+#include "datasetRealSense.h"
 #include "dataloader_3rscan.h"
 #include "dataloader_scannet.h"
 #include "dataloader_scenenn.h"
+#include "dataloader_realsense.h"
 
 namespace PSLAM {
     struct  DataLoaderFactory {
@@ -19,12 +21,17 @@ namespace PSLAM {
                 if(pth.find("ScanNet") != std::string::npos) {
                     inputeType = DATASET_SCANNET;
                     std::cerr << "ScanNet\n";
+                }
+                else if(pth.find("realsense")!=std::string::npos){
+                    inputeType = DATASET_REALSENSE;
+                    std::cout<<"data type: Realsense!\n";
                 } 
                 else {
                     inputeType = DATASET_3RSCAN;
                     std::cerr << "3RScan";
                 }
             }
+                
 
             // Create dataloader
             switch (inputeType) {
@@ -42,6 +49,11 @@ namespace PSLAM {
                 case DATASET_SCENENN:{
                     auto database = std::make_shared<SceneNNDataset>(inputeType,pth);
                     output = new DatasetLoader_SceneNN(database);
+                    break;
+                }
+                case DATASET_REALSENSE:{
+                    auto database = std::make_shared<RealsenseDataset>(inputeType,pth);
+                    output = new Datasetloader_Realsense(database);
                     break;
                 }
                 case DATASET_DETECT:

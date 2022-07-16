@@ -115,8 +115,12 @@ int main(int argc, char** argv) {
     std::string path;
     if(params.dataset_dir.find("ScanNet")!=std::string::npos)
         path = params.dataset_dir+"/"+params.scan_name+"/"+params.scan_name+".sens";
-    else 
+    else if(params.dataset_dir.find("3rscan")!=std::string::npos)
         path = params.dataset_dir+"/"+params.scan_name+"/sequence";//params.pth_in;
+    else {
+        path = params.dataset_dir+"/"+params.scan_name;
+        params.use_render = false;
+        }
     int latest_index = 0;
     // if (path.find(".txt") != std::string::npos) {
     //     std::ifstream file(path);

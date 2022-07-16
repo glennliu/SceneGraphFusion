@@ -11,6 +11,7 @@ Instance::Instance(const NodePtr &node_ptr,float position_scale_, int min_surfel
 
     {   
         label = node_ptr->GetLabel();
+        if(label=="desk") label="table";
         centroid = position_scale * node_ptr->centroid;
         normal = node_ptr->sNormal;
         bboxmin = position_scale * node_ptr->bbox_min;
@@ -70,6 +71,7 @@ void Instance::addNode(const NodePtr &node_ptr)
 void Instance::setLabel(std::string type)
 {
     label = type;
+    if(label=="desk") label = "table";
 }
 
 cv::Rect2f Instance::get2DBox()const

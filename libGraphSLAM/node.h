@@ -53,6 +53,8 @@ namespace PSLAM {
 
         bool DeactivateSurfels();
 
+        void Transform(const Eigen::Matrix4f Transformation);
+
         cv::Rect2f get2DBox()const;
 
         // bool isValidType()const; // Check those valid nodes for loop

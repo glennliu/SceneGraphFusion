@@ -107,6 +107,19 @@ void Node::Update(const int label,
     throw std::runtime_error("not implemented.");
 }
 
+void Node::Transform(const Eigen::Matrix4f Transformation)
+{
+    const Eigen::Matrix3Xf rot = Transformation.topLeftCorner(3,3);
+    const Eigen::Vector3f translation = Transformation.topRightCorner(3,1);
+    for(auto &pair:surfels){
+        auto &sf = pair.second;
+        Eigen::Vector3f pos_old = sf->pos;
+        Eigen::Vector3f n_old = sf->normal;
+        sf->pos = rot * pos_old + translation;
+        sf->normal = rot * n_old;
+    }    
+}
+
 void Node::RemoveEdge(const EdgePtr &edge){
     Lock lock(mMutEdge);
     if (edges.find(edge) == edges.end()) return;
