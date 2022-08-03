@@ -32,7 +32,7 @@ namespace PSLAM {
 //        int predict_when_have_at_least_n_node;
         size_t n_pts;
 
-        // int min_surfels;    // Only larger segments are valid
+        // int stable_instance_filter;    // Only large instances are labelled stable
 
         float neighbor_margin; // mm
 
@@ -46,7 +46,13 @@ namespace PSLAM {
         int active_frames_threshold;
 
         std::string pth;
+        typedef struct StableInstance
+        {
+            int min_surfels;
+            float min_class_weight;
+        };
 
+        StableInstance stable_instance;
 
         inseg_lib::InSegConfig inseg_config;
         inseg_lib::MainConfig main_config;
@@ -68,9 +74,13 @@ namespace PSLAM {
                 <<"--inactive_frames_threshold: "<<inactive_frames_threshold<<"\n"
                 <<"--active_frames_threshold: "<<active_frames_threshold<<"\n"
                 <<"--pth: "<<pth<<"\n";
+                // <<"--min_surfels: "<<min_surfels<<"\n";
             str<<"MainConfig\n"
                 <<"--min_pyr_level: "<<main_config.min_pyr_level<<"\n"
                 <<"--max_pyr_level: "<<main_config.max_pyr_level<<"\n";
+            str<<"StableInstance\n"
+                <<"--min_surfels: "<<stable_instance.min_surfels<<"\n"
+                <<"--min_class_weight: "<<stable_instance.min_class_weight<<"\n";
             str<<"InsegLib Params\n"
                 <<"--depth_edge_threshold: "<<inseg_config.depth_edge_threshold<<"\n";
 

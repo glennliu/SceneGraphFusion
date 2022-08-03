@@ -5,6 +5,8 @@
 #include <memory>
 #include <map>
 #include <mutex>
+#include <Eigen/Dense>
+
 namespace PSLAM {
     class Edge { // Directed Edge
     public:
@@ -29,6 +31,8 @@ namespace PSLAM {
         std::string label = None();
 
         bool consistent = false;
+        std::string node_to_label;
+        Eigen::Vector3f edge_vec;
         float distance = 0.0f;
     };
     typedef std::shared_ptr<Edge> EdgePtr;

@@ -890,12 +890,15 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 // const int latest_instance_id(node->idx);
                 auto instance_ptr = mpGraph->findInstance(node->idx);
                 if(!instance_ptr){
+                    Instance::Thresholds thre;
                     InstancePtr instance_toadd;
-                    instance_toadd = std::make_shared<Instance>(node,0.001f);
+                    instance_toadd = std::make_shared<Instance>(node,0.001f,mConfigPslam->stable_instance);
                     mpGraph->instances.emplace(node->idx,instance_toadd);
                 }
                 else if(instance_ptr->parent){
-                    instance_ptr->setLabel(node->GetLabel());
+                    std::string nlabel = node->GetLabel();
+                    instance_ptr->setLabel(nlabel);
+                    if(nlabel!="unknown") instance_ptr->clss_prb = node->mClsProb[nlabel];
                 }
 
                 std::set<int> checked_nodes;
@@ -1016,10 +1019,19 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 auto node_ = nodes.at(i);
                 node_->instance_idx = instance_id;
                 nodes.at(i)->instance_idx = instance_id;
+
+                auto instance_ptr = mpGraph->findInstance(instance_id);
+                // if(!instance_ptr){
+                //     InstancePtr instance_toadd;
+                //     instance_toadd = std::make_shared<Instance>(node,0.001f);
+                //     mpGraph->instances.emplace(node->idx,instance_toadd);
+                // }
+
                 if(instance_id!=i) {
                     auto child_instance = mpGraph->instances.find(i);
                     if(child_instance!=mpGraph->instances.end()) child_instance->second->parent = false;
-                    mpGraph->instances.at(instance_id)->addNode(node_);
+                    if(instance_ptr) instance_ptr->addNode(node_);
+                    // mpGraph->instances.at(instance_id)->addNode(node_);
                 }
             }
 

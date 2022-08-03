@@ -16,6 +16,7 @@ GraphSLAM::GraphSLAM(ConfigPSLAM *config, const CameraParameters &camParamD):mCo
     mGraph = std::make_shared<Graph>(config, config->use_thread);//(config->use_thread);
     inactive_mGraph = std::make_shared<Graph>(config,config->use_thread);
     inseg_ = std::make_shared<inseg_lib::InSegLib>(mGraph, config->inseg_config, config->main_config, config->map_config, config->segmentation_config);
+    // std::cout<<"Set depth edge thre:"<<inseg_->config().depth_edge_threshold<<"!\n";
     pose_.setIdentity();
     if(mConfig->graph_predict) {
 #ifdef COMPILE_WITH_GRAPHPRED

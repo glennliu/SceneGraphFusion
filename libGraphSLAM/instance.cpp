@@ -2,15 +2,19 @@
 
 using namespace PSLAM;
 
-Instance::Instance(const NodePtr &node_ptr,float position_scale_, int min_surfels_):
+Instance::Instance(const NodePtr &node_ptr,float position_scale_, 
+    ConfigPSLAM::StableInstance stable_threshold):
     instance_id(node_ptr->idx),parent(true),active_flag(true),
-    position_scale(position_scale_), min_surfels(min_surfels_)
+    position_scale(position_scale_),thresh_params(stable_threshold)
 {
     nodelist.emplace(node_ptr->idx);
     nodes.emplace_back(node_ptr);
 
     {   
         label = node_ptr->GetLabel();
+        if(label!=node_ptr->Unknown())
+            clss_prb = node_ptr->mClsProb[label];
+        else clss_prb = 0.0;
         if(label=="desk") label="table";
         centroid = position_scale * node_ptr->centroid;
         normal = node_ptr->sNormal;
@@ -19,7 +23,7 @@ Instance::Instance(const NodePtr &node_ptr,float position_scale_, int min_surfel
         time_stamp.created = node_ptr->time_stamp_active;
         time_stamp.lastest_viewed = node_ptr->time_stamp_viewed;
         num_sfs = node_ptr->surfels.size();
-        if(num_sfs>min_surfels 
+        if(num_sfs>thresh_params.min_surfels && clss_prb>thresh_params.min_class_weight
             && label!="none" && label!="otherfurniture" && label!="unknown")
             stable = true;
         else stable = false;
@@ -54,7 +58,7 @@ void Instance::updateAttributes()
     centroid *=position_scale;
     normal /=num_sfs;
 
-    if(num_sfs>min_surfels 
+    if(num_sfs>thresh_params.min_surfels && clss_prb>thresh_params.min_class_weight
         && label!="none" && label!="otherfurniture" && label!="unknown")
         stable = true;
     else stable = false;

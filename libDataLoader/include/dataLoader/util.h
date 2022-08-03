@@ -30,6 +30,21 @@ namespace PSLAM {
         }
 //        std::cout << "pose\n"<< pose << "\n";
     }
+
+    static const inline std::vector<std::string> split_str(const std::string s, const std::string delim) {
+        std::vector<std::string> list;
+        auto start = 0U;
+        auto end = s.find(delim);
+        while (true) {
+            list.push_back(s.substr(start, end - start));
+            if (end == std::string::npos)
+                break;
+            start = end + delim.length();
+            end = s.find(delim, start);
+        }
+        return list;
+    }
+
 }
 
 

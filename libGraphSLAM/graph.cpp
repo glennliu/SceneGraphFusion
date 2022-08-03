@@ -43,6 +43,21 @@ int Graph::Add(const SurfelPtr &surfel) {
     return node->Add(surfel);
 }
 
+void Graph::transformNodes(const Eigen::Matrix4f T)
+{
+    for(auto &node_ptr:nodes){
+        node_ptr.second->Transform(T);
+    }
+}
+
+void Graph::transformEntireGraph(const Eigen::Matrix4f T)
+{
+    transformNodes(T);
+    for(auto &instance_itr:instances){
+        instance_itr.second->updateAttributes();
+    }
+}
+
 void Graph::Merge(const int seg_idx_to, const int seg_idx_from) {
     try {
         NodePtr node_from, node_to; // Use copy to prevent thread error
@@ -440,7 +455,6 @@ void Graph::updateSelectedInstances(bool enable_init_new)
 {
     if(instances_to_update.empty()) return;
 
-
     for(auto idx:instances_to_update){
         auto instance_itr = instances.find(idx);
         if(instance_itr!=instances.end()){  
@@ -462,7 +476,7 @@ void Graph::createInstances(const size_t time,
         node_ptr->second->UpdateSelectedNode(time,mConfigPslam->filter_num_node, mConfigPslam->n_pts,false);
         auto instance_ptr = instances.find(node_idx);
         if(instance_ptr==instances.end()){
-            InstancePtr instance_toadd = std::make_shared<Instance>(node_ptr->second,position_scale);
+            InstancePtr instance_toadd = std::make_shared<Instance>(node_ptr->second,position_scale,mConfigPslam->stable_instance);
             instances.emplace(node_ptr->second->idx,instance_toadd);
             num_created++;
         }

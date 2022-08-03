@@ -137,7 +137,8 @@ int main(int argc, char** argv) {
     // std::cout<<"yaw:"<<params.sigma_yaw<<"\n";
 
     if(params.use_render) {
-        if (path.find("scene") == std::string::npos) dataset_loader_->GetCamParamDepth() = dataset_loader_->GetCamParamRGB();
+        if (path.find("scene") == std::string::npos) 
+            dataset_loader_->GetCamParamDepth() = dataset_loader_->GetCamParamRGB();
     }
 
 #ifndef COMPILE_WITH_PSLAM_GUI

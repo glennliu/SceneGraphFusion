@@ -147,7 +147,7 @@ namespace PSLAM {
                 else {
                     const float zn = (img.at<float>(i) * 2 - 1);
                     const float ze = 2.0f * near * far / (far + near - zn * (far - near));
-                    img.at<float>(i) = ze * 1000;;
+                    img.at<float>(i) = ze * 1000;
                 }
             }
 //            cv::resize(img, img, cv::Size(loader->m_depthWidth, loader->m_depthHeight), 0, 0, cv::INTER_NEAREST);

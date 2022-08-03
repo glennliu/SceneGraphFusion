@@ -117,7 +117,14 @@ void Node::Transform(const Eigen::Matrix4f Transformation)
         Eigen::Vector3f n_old = sf->normal;
         sf->pos = rot * pos_old + translation;
         sf->normal = rot * n_old;
-    }    
+    }
+
+    int num_sf = surfels.size();    
+    Lock lock(mMutNode);
+    centroid = rot * centroid + translation;
+    sNormal = rot * sNormal;
+    pos_sum = num_sf* centroid;
+    Normal_sum = num_sf * sNormal;
 }
 
 void Node::RemoveEdge(const EdgePtr &edge){

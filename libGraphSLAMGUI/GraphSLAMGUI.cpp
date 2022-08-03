@@ -298,7 +298,7 @@ void GraphSLAMGUI::MainUI(){
     /// Save
     const int idx = mpDataLoader->GetFrameIndex();
     const std::string output_folder = 
-        tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 1) +"/output";
+        tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 0) +"/output";
     tools::PathTool::check_and_create_folder(output_folder);
     const std::string pth_out = output_folder +"/" + std::to_string(idx)+"_";
     // printf("check path:%s \n",pth_out.c_str());

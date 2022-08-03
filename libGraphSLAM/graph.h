@@ -75,6 +75,10 @@ public:
 
     Instance *findInstance(int id);
 
+    void transformNodes(const Eigen::Matrix4f T_);
+
+    void transformEntireGraph(const Eigen::Matrix4f T_);
+
     // ===
     // thread
     // ===

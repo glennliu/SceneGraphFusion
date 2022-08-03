@@ -14,7 +14,7 @@ struct Params{
     int inactive_frames = 200; // Move to inactive if unseen longer than the threshold
     int active_frames_thre = 9999;  // 
 
-    float depth_edge_threshold = -1; // -1: use default.
+    float depth_edge_threshold = 0.9; // -1: use default.
 
     /// Use rendered view from a given mesh (for ScanNet)
     bool use_render=true;
@@ -35,6 +35,9 @@ struct Params{
 
     bool verbose=false;
     int segment_filter=512;
+
+    int stable_instance_filter = 5000; // Filter small instance
+    float stable_instance_clss_weight = 0.5;
 
     /// Incorporated pose drift
     float sigma_xy = 0.0;
@@ -105,6 +108,8 @@ PSLAM::ConfigPSLAM getConfig(const Params &params)
         configPslam.main_config.min_pyr_level = params.min_pyr_level;
         configPslam.inactive_frames_threshold = params.inactive_frames;
         configPslam.active_frames_threshold = params.active_frames_thre;
+        configPslam.stable_instance.min_surfels = params.stable_instance_filter;
+        configPslam.stable_instance.min_class_weight = params.stable_instance_clss_weight;
 
         if(params.depth_edge_threshold == -1) {
             std::cout<< "use predefined depth edge threshold: " << params.depth_edge_threshold<<"\n";
