@@ -56,8 +56,8 @@ public:
 
     void updateSelectedInstances(bool enable_init_new=false);
 
-    void createInstances(const size_t time, 
-        const std::unordered_set<int> &nodes_toadd, float position_scale);
+    void createInstances(const size_t time, float position_scale=0.001f);
+        // const std::unordered_set<int> &nodes_toadd, 
 
     // For the nodes are updated, recrod their timestamp
     void RecordUpdateTime(const size_t &timestamp);

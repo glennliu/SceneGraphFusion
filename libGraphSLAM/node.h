@@ -40,6 +40,8 @@ namespace PSLAM {
         void UpdatePrediction(const std::map<std::string, float> &pd,
                               const std::map<std::string, std::pair<size_t, size_t>> &sizeAndEdge, bool fusion);
 
+        void updateMaxLabel();
+
         bool CheckConnectivity(Node *nodeP, float margin, bool modify);
 
         // Last semantic label predicted

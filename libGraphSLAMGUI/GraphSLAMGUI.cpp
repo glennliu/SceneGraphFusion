@@ -297,11 +297,15 @@ void GraphSLAMGUI::MainUI(){
 
     /// Save
     const int idx = mpDataLoader->GetFrameIndex();
-    const std::string output_folder = 
-        tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, 0) +"/output";
+    int folder_parent_level;
+    if(mpDataLoader->GetDataBase()->folder.find("ScanNet")!=std::string::npos)
+        folder_parent_level = 1;
+    else folder_parent_level = 0;
+    const std::string output_folder=tools::PathTool::find_parent_folder(mpDataLoader->GetDataBase()->folder, folder_parent_level) +"/output";
+     
     tools::PathTool::check_and_create_folder(output_folder);
     const std::string pth_out = output_folder +"/" + std::to_string(idx)+"_";
-    // printf("check path:%s \n",pth_out.c_str());
+    printf("check path:%s \n",pth_out.c_str());
 
     if(ImGui::Checkbox("RecordImg",&bRecordImg)) ;
     if(ImGui::Button("Save image")) RecordImg(pth_out);
@@ -324,7 +328,7 @@ void GraphSLAMGUI::MainUI(){
 
     };
     if(ImGui::Button("Save Nodes to ply")) {
-        mpGraphSLAM->SaveNodesToPLY(mNodeFilterSize,pth_out, static_cast<PSLAM::GraphSLAM::SAVECOLORMODE>(node_color_saving_mode),save_binary_ply);
+        mpGraphSLAM->SaveNodesToPLY(mNodeFilterSize,pth_out,static_cast<PSLAM::GraphSLAM::SAVECOLORMODE>(node_color_saving_mode),save_binary_ply);
         mpGraphSLAM->SaveNodesToPLY(mNodeFilterSize,pth_out,static_cast<PSLAM::GraphSLAM::SAVECOLORMODE>(node_color_saving_mode),save_binary_ply,true);
         printf("ply saved at %s\n",pth_out.c_str());
     }

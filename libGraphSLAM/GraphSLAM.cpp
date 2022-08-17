@@ -115,6 +115,7 @@ void GraphSLAM::ProcessFrame(int idx, const cv::Mat &colorImage, const cv::Mat &
     }
 #endif
 
+    mGraph->createInstances(mTimeStamp);
     transitInactiveNodes(mTimeStamp);
     std::cout<<"Active graph: "
         << mGraph->instances.size() <<" Instances, "
@@ -238,7 +239,7 @@ void GraphSLAM::transitInactiveNodes(const size_t &timestamp)
     
     mGraph->RemoveInactiveNodes(nodes_tomove);
     mGraph->RemoveInactiveInstances(instances_tomove);
-    inactive_mGraph->createInstances(timestamp, nodes_toadd,0.001f);
+    // inactive_mGraph->createInstances(timestamp, nodes_toadd,0.001f);
 
     std::cout<<"InactiveGraph: "
         <<inactive_mGraph->instances.size()<<" instances, "
@@ -437,6 +438,7 @@ void GraphSLAM::SaveNodesToPLY(int segment_filter,
 //        file.open(path, std::ios::out | std::ios::app | std::ios::binary);
 //    }
 
+    std::cout<<"Saving nodes:";
     for (const auto &node: target_graph->nodes) {
         if (node.first == 0 ) continue;
         if (segment_filter > 0)
@@ -634,7 +636,9 @@ void GraphSLAM::SaveNodesToPLY(int segment_filter,
 
         }
 
+        std::cout<<"{"<<node.first<<","<<node.second->surfels.size()<<"}";
     }
+    std::cout<<"\n";
 
     file.close();
 }
@@ -799,6 +803,7 @@ json11::Json GraphSLAM::GetSceneGraph(
     if(export_src_graph) graph_ptr= mGraph;
     else graph_ptr = inactive_mGraph;
     std::unique_lock<std::mutex> lock(graph_ptr->mMutNode);
+    json11::Json::object instances;
     json11::Json::object nodes;
     json11::Json::object edges;
     json11::Json::object colors;
@@ -825,10 +830,13 @@ json11::Json GraphSLAM::GetSceneGraph(
             edges[pair.first] = pair.second;
         }
     } else {
+        int n_nodes=0, n_instances=0;
         for (const auto &node : graph_ptr->nodes) {
             if (node.second->GetLabel() == Node::Unknown()) continue;
             json11::Json::object probs, node_json;
+            int parent_instance = node.second->instance_idx;
             if (node.second->mClsProb.empty()) continue;
+            if(node.first!=parent_instance) continue;
             for(const auto &pair:node.second->mClsProb) {
 //                if(std::isinf(log(pair.second)))
 //                    SCLOG(ERROR) << "get inf from " << pair.second << " of them " << pair.first;
@@ -837,8 +845,20 @@ json11::Json GraphSLAM::GetSceneGraph(
             node_json["label"] = probs;
             node_json["time_created"] = (int)node.second->time_stamp_active;
             node_json["time_viewed"] = (int)node.second->time_stamp_viewed;
-            nodes[std::to_string(node.second->instance_idx)] = node_json;
+            nodes[std::to_string(node.first)] = node_json;
+            n_nodes++;
+            // nodes[std::to_string(node.second->instance_idx)] = node_json;
             // nodes[std::to_string(node.first)]["label"] = probs;
+        }
+
+        for(const auto &instance: graph_ptr->instances){
+            json11::Json::array node_list;
+            if(!instance.second->parent||!instance.second->stable )continue;
+            for(auto node_ptr:*instance.second->getNodesPtr()){
+                node_list.emplace_back(json11::Json(node_ptr->idx));
+            }    
+            instances[std::to_string(instance.first)] = node_list;   
+            n_instances++;     
         }
 
         for(const auto &edge : graph_ptr->edges) {
@@ -856,7 +876,12 @@ json11::Json GraphSLAM::GetSceneGraph(
             }
             edges[name] = probs;
         }
+    
+        std::cout<<n_nodes<<" nodes, "
+            <<n_instances<<" instances, "
+            << " are saved\n";
     }
+    prediction["instances"] = instances;
     prediction["nodes"] = nodes;
     prediction["edges"] = edges;
     prediction["kfs"] = kfs;

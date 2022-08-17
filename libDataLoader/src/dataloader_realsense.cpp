@@ -7,19 +7,21 @@ using namespace PSLAM;
 Datasetloader_Realsense::Datasetloader_Realsense(
     std::shared_ptr<DatasetDefinitionBase> dataset):DatasetLoader_base(std::move(dataset))
 {
-    std::cout<<"Initiating realsense dataloader...\n";
+    std::cout<<"Initiating realsense dataloader "<<m_dataset->folder<<"\n";
     if(!loadIntrinsic(m_dataset->folder+"/intrinsic.txt"))
         throw std::runtime_error("unable to open intrinsic file");
-
     if(!loadAssociateFile(m_dataset->folder+"/association.txt"))
         throw std::runtime_error("unable to open association file");
-    
     if(!loadCameraPose(m_dataset->folder+"/CameraTrajectory.txt"))
         throw std::runtime_error("unable to open trajectory file");
 
     if(associated_frames.size()!=camera_poses.size())
         throw std::runtime_error("Image frames and camera pose are not aligned");
 
+    frame_index_max = associated_frames.size();
+    // std::cout<<"max frames: "<<frame_index_max<<"\n";
+    // std::cout<<"Succeed:\n";
+    
 }
 
 bool Datasetloader_Realsense::loadIntrinsic(
@@ -180,7 +182,7 @@ bool Datasetloader_Realsense::Retrieve()
     FrameData frame_info = associated_frames[frame_index];
     std::string rgbFilename = m_dataset->folder+"/"+frame_info.rgb_filename;
     std::string depthFilename = m_dataset->folder+"/"+frame_info.depth_filename;
-
+    
     std::cout<<"Depth file: "<<depthFilename<<"\n"
         <<"Rgb file: "<<rgbFilename<<"\n";
         // <<poseFilename<<"\n";
@@ -205,7 +207,7 @@ bool Datasetloader_Realsense::Retrieve()
                 m_d.at<unsigned short>(r,c) = 0;
         }
     }
-
+    
     m_rgb = cv::imread(rgbFilename, -1);
 
     // LoadPose(m_pose, poseFilename, false);

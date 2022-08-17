@@ -31,6 +31,7 @@ namespace PSLAM {
         std::string label = None();
 
         bool consistent = false;
+        bool valid = true;
         std::string node_to_label;
         Eigen::Vector3f edge_vec;
         float distance = 0.0f;

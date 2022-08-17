@@ -78,6 +78,7 @@ DatasetLoader_3RScan::DatasetLoader_3RScan(std::shared_ptr<DatasetDefinitionBase
             m_poseTransform.topRightCorner<3,1>()*=1e3;
         }
     }
+    frame_index_max = 999999;
 }
 
 const std::string DatasetLoader_3RScan::GetFileName(const std::string& folder,

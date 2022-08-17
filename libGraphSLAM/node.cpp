@@ -16,6 +16,7 @@ mbNeedUpdateNodeFeature(false),mIdxCounter(0), time_stamp_active(timestamp), mer
     bbox_max.setZero();
     bbox_min.setZero();
     Normal_sum.setZero();
+    sNormalStd.setZero();
 }
 
 int Node::Add(const SurfelPtr &surfel) {
@@ -177,6 +178,20 @@ void Node::UpdatePrediction(
         Lock lock_pd (mMutPDLabel);
         last_class_predicted = max_label;
     }
+}
+
+void Node::updateMaxLabel()
+{
+    float max_v=mClsProb.begin()->second;
+    std::string max_label = GetLabel();
+    for(const auto& pair:mClsProb){
+        if(pair.second>=max_v){
+            max_v = pair.second;
+            max_label = pair.first;
+        }
+    }
+    Lock lock_pd (mMutPDLabel);
+    last_class_predicted = max_label;
 }
 
 bool Node::CheckConnectivity(Node *nodeP, float margin, bool modify){

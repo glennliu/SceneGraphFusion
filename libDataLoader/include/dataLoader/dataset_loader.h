@@ -39,6 +39,10 @@ namespace PSLAM {
         const cv::Mat& getRenderDepth()const{
             return m_d_render;
         }
+        const bool isFinished()const{
+            if(frame_index<frame_index_max)return false;
+            else return true;
+        }
 
         void SetFrameIndex(int idx) {frame_index = idx;}
 
@@ -84,6 +88,7 @@ namespace PSLAM {
     protected:
         std::shared_ptr<DatasetDefinitionBase> m_dataset;
         int frame_index = 0, frame_index_max = 0;
+        // int total_frames_num = 0;
         cv::Mat m_rgb, m_d;
         cv::Mat m_d_render;
         Eigen::Matrix4f m_pose;

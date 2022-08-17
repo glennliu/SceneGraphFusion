@@ -15,6 +15,7 @@ namespace PSLAM
         std::pair<int,int> idxs;
         std::pair<std::string,std::string> types;
         Eigen::Vector2f distances;
+        Eigen::Vector3f cross_vec;
         float cos_theta;
         float sin_theta;
     };
@@ -43,6 +44,10 @@ namespace PSLAM
         void setLabel(std::string type);
 
         void updateAttributes();
+
+        void removeNode(const int id);
+
+        void checkOverlappedEdge(float max_cos_theta=0.9);
 
         // void setInValid();
 
@@ -73,7 +78,9 @@ namespace PSLAM
             //TODO: ensure the unit is consistent
             Eigen::Vector3f centroid;   // in meters
             Eigen::Vector3f normal;
+            Eigen::Vector3f normalstd;
             Eigen::Vector3f bboxmin, bboxmax;   // in meters
+            float height;   // TODO: height relative to floor
             TimeStamp time_stamp;
             unsigned int num_sfs;
             std::string label;
@@ -81,6 +88,8 @@ namespace PSLAM
             std::unordered_set<size_t> neighbors;
             std::unordered_map<size_t,EdgePtr> edges;   // Directed edge
             std::vector<CornerPtr> corners; 
+            std::vector<Eigen::Vector3i> rWalkDes; // Random walk descriptor
+            std::vector<Eigen::Vector3i> rWalkRoute; // Random walk route
 
             bool stable; // Set false for instances that are too small
             bool parent; // Set false if merged to other instance
@@ -90,7 +99,6 @@ namespace PSLAM
             float position_scale;
             ConfigPSLAM::StableInstance thresh_params;
             // unsigned int min_surfels;  // Threshold to mark stable
-            float height;   // TODO: height relative to floor
             NodeList nodelist;
             std::vector<ConstNodePtr> nodes;
             

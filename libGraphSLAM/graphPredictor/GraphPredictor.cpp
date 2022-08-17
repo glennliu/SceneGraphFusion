@@ -888,18 +888,18 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 node->UpdatePrediction(m, mm, mConfigPslam->use_fusion);
 
                 // const int latest_instance_id(node->idx);
-                auto instance_ptr = mpGraph->findInstance(node->idx);
-                if(!instance_ptr){
-                    Instance::Thresholds thre;
-                    InstancePtr instance_toadd;
-                    instance_toadd = std::make_shared<Instance>(node,0.001f,mConfigPslam->stable_instance);
-                    mpGraph->instances.emplace(node->idx,instance_toadd);
-                }
-                else if(instance_ptr->parent){
-                    std::string nlabel = node->GetLabel();
-                    instance_ptr->setLabel(nlabel);
-                    if(nlabel!="unknown") instance_ptr->clss_prb = node->mClsProb[nlabel];
-                }
+                // auto instance_ptr = mpGraph->findInstance(node->idx);
+                // if(!instance_ptr){
+                    // Instance::Thresholds thre;
+                    // InstancePtr instance_toadd;
+                    // instance_toadd = std::make_shared<Instance>(node,0.001f,mConfigPslam->stable_instance);
+                    // mpGraph->instances.emplace(node->idx,instance_toadd);
+                // }
+                // else if(instance_ptr->parent){
+                //     std::string nlabel = node->GetLabel();
+                //     instance_ptr->setLabel(nlabel);
+                //     if(nlabel!="unknown") instance_ptr->clss_prb = node->mClsProb[nlabel];
+                // }
 
                 std::set<int> checked_nodes;
                 auto has_same_nodes = has_same_part_nodes[node->idx];
@@ -1002,7 +1002,7 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 if(found_nodes.find(i) == found_nodes.end()) should_seperate.insert(i);
             for(auto i : should_seperate) {
                 nodes.at(i)->instance_idx = i; 
-                mpGraph->instances.at(i)->reInitiate();
+                // mpGraph->instances.at(i)->reInitiate();
             }
             
             if(found_nodes.empty()) continue;
@@ -1020,19 +1020,14 @@ void GraphPredictor::UpdatePrediction(const std::map<int,NodePtr> &vNodes,
                 node_->instance_idx = instance_id;
                 nodes.at(i)->instance_idx = instance_id;
 
-                auto instance_ptr = mpGraph->findInstance(instance_id);
-                // if(!instance_ptr){
-                //     InstancePtr instance_toadd;
-                //     instance_toadd = std::make_shared<Instance>(node,0.001f);
-                //     mpGraph->instances.emplace(node->idx,instance_toadd);
-                // }
+                // auto instance_ptr = mpGraph->findInstance(instance_id);
 
-                if(instance_id!=i) {
-                    auto child_instance = mpGraph->instances.find(i);
-                    if(child_instance!=mpGraph->instances.end()) child_instance->second->parent = false;
-                    if(instance_ptr) instance_ptr->addNode(node_);
-                    // mpGraph->instances.at(instance_id)->addNode(node_);
-                }
+                // if(instance_id!=i) {
+                //     auto child_instance = mpGraph->instances.find(i);
+                //     if(child_instance!=mpGraph->instances.end()) child_instance->second->parent = false;
+                //     if(instance_ptr) instance_ptr->addNode(node_);
+                //     // mpGraph->instances.at(instance_id)->addNode(node_);
+                // }
             }
 
             std::stringstream ss;

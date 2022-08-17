@@ -115,8 +115,10 @@ int main(int argc, char** argv) {
     std::string path;
     if(params.dataset_dir.find("ScanNet")!=std::string::npos)
         path = params.dataset_dir+"/"+params.scan_name+"/"+params.scan_name+".sens";
-    else if(params.dataset_dir.find("3rscan")!=std::string::npos)
+    else if(params.dataset_dir.find("3rscan")!=std::string::npos){
         path = params.dataset_dir+"/"+params.scan_name+"/sequence";//params.pth_in;
+        params.use_render = true;
+    }
     else {
         path = params.dataset_dir+"/"+params.scan_name;
         params.use_render = false;
@@ -188,9 +190,9 @@ int main(int argc, char** argv) {
             t_p.topRightCorner<3, 1>() /= 1000.f;
             t_p.transposeInPlace();
             cv::Mat t_rgb;
-            std::cout<<d.size()<<"\n";
+            // std::cout<<d.size()<<"\n";
             renderer->Render(t_rgb,d,t_p,dataset_loader_->GetCamParamDepth());
-            std::cout<<d.size()<<","<<d.type()<<"\n";
+            // std::cout<<d.size()<<","<<d.type()<<"\n";
         }
 
         {// Debug depth
@@ -215,18 +217,22 @@ int main(int argc, char** argv) {
 
         CTICK("[ALL]0.all");
         graphSlam.ProcessFrame(dataset_loader_->GetFrameIndex(), rgb, d, &pose);
-        std::cout<<pose<<"\n";
+        // std::cout<<pose<<"\n";
         CTOCK("[ALL]0.all");
         std::cout<<"slam "<< timer.toc_ms()<<"ms\n";
+        std::cout<<graphSlam.GetGraph()->nodes.size()<<" nodes, "
+            <<graphSlam.GetGraph()->instances.size()<<" instances, "
+            <<std::endl;
+
     }
     SCLOG(INFO) << "frame processing finished.";
 #endif
     if(params.save) {
         graphSlam.Stop();
         const std::string output_folder = params.dataset_dir+"/"+params.scan_name+"/output";
-        const std::string output_dir = output_folder+"/"+std::to_string(latest_index)+"_";
+        const std::string output_dir = output_folder+"/0_";//+std::to_string(latest_index)+"_";
             // +std::to_string(dataset_loader_->GetFrameIndex())+"_";
-        SCLOG(INFO) << "saving results.";
+        SCLOG(INFO) << "saving results to"<<output_dir;
         if(params.save_graph_ply) {
             // auto colorMode = params.use_predict? PSLAM::GraphSLAM::SAVECOLORMODE_SEMANTIC : PSLAM::GraphSLAM::SAVECOLORMODE_RGB;
             auto colorMode = PSLAM::GraphSLAM::SAVECOLORMODE_RGB;
@@ -242,7 +248,7 @@ int main(int argc, char** argv) {
             graphSlam.SaveSurfelsToPLY(params.pth_out,params.save_name,graphSlam.GetInSeg()->map().surfels,params.binary);
 
         if(params.save_graph) {
-            auto scan_id = tools::PathTool::getFileName(tools::PathTool::find_parent_folder(path, 1));
+            // auto scan_id = tools::PathTool::getFileName(tools::PathTool::find_parent_folder(path, 1));
             auto predictions_src = graphSlam.GetSceneGraph(params.full_prop);
             auto predictions_tar = graphSlam.GetSceneGraph(params.full_prop,false);
             json11::Json::object json;

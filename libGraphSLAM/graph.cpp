@@ -440,7 +440,7 @@ void Graph::UpdateSelectedNodes(
             node = this->nodes.at(node_idx);
             if (node->surfels.size() < (size_t)mConfigPslam->filter_num_node) continue;
         }
-        instances_to_update.emplace(node->instance_idx);
+        // instances_to_update.emplace(node->instance_idx);
         if(mbThread)
             mPools->runTask( std::bind(&PSLAM::Node::UpdateSelectedNode, node.get(), time, mConfigPslam->filter_num_node, mConfigPslam->n_pts, force) );
         else{
@@ -465,26 +465,37 @@ void Graph::updateSelectedInstances(bool enable_init_new)
     instances_to_update.clear();
 }
 
-void Graph::createInstances(const size_t time,
-    const std::unordered_set<int> &nodes_toadd,float position_scale)
+void Graph::createInstances(const size_t time,float position_scale)
+    // const std::unordered_set<int> &nodes_toadd,
 {
-    if(nodes_toadd.empty()) return;
+    if(nodes.empty()) return;
+    instances.clear();
+    instances_to_update.clear();
     int num_created = 0;
-    for(auto node_idx:nodes_toadd){
-        auto node_ptr = nodes.find(node_idx);
-        if(node_ptr==nodes.end()) continue;
-        node_ptr->second->UpdateSelectedNode(time,mConfigPslam->filter_num_node, mConfigPslam->n_pts,false);
-        auto instance_ptr = instances.find(node_idx);
+    for(auto node_itr:nodes){
+        auto node_ptr = node_itr.second;//find(node_idx);
+        if(node_ptr->surfels.size()<mConfigPslam->filter_num_node) continue;
+        // if(node_ptr==nodes.end()) continue;
+        // node_ptr->second->UpdateSelectedNode(time,mConfigPslam->filter_num_node, mConfigPslam->n_pts,false);
+        auto instance_ptr = instances.find(node_ptr->instance_idx);
         if(instance_ptr==instances.end()){
-            InstancePtr instance_toadd = std::make_shared<Instance>(node_ptr->second,position_scale,mConfigPslam->stable_instance);
-            instances.emplace(node_ptr->second->idx,instance_toadd);
+            InstancePtr instance_toadd = std::make_shared<Instance>(node_ptr,position_scale,mConfigPslam->stable_instance);
+            instances.emplace(node_ptr->instance_idx,instance_toadd);
             num_created++;
+        }
+        else{
+            instance_ptr->second->addNode(node_ptr);
+            instances_to_update.emplace(node_ptr->instance_idx);
         }
     }
 
-    SCLOG(INFO)<<num_created<<" instances are added";
-
-
+    for(int idx:instances_to_update){
+        auto instance_itr = instances[idx];
+        instance_itr->updateAttributes();
+        // std::cout<<idx<<","<<instance_itr->centroid.transpose()<<"\n";
+    }
+    instances_to_update.clear();
+    SCLOG(INFO)<<num_created<<" instances are created";
 }
 
 Instance *Graph::findInstance(int id)
