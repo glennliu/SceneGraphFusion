@@ -57,7 +57,6 @@ public:
     void updateSelectedInstances(bool enable_init_new=false);
 
     void createInstances(const size_t time, float position_scale=0.001f);
-        // const std::unordered_set<int> &nodes_toadd, 
 
     // For the nodes are updated, recrod their timestamp
     void RecordUpdateTime(const size_t &timestamp);
@@ -79,6 +78,8 @@ public:
 
     void transformEntireGraph(const Eigen::Matrix4f T_);
 
+    void getStableInstanceList(std::vector<int> &list);
+
     // ===
     // thread
     // ===
@@ -89,6 +90,7 @@ public:
 
     std::set<int> nodes_to_update;
     std::set<int> instances_to_update;
+    // std::vector<int> instance_list;
     std::mutex mMutNode; // when access nodes
     std::mutex mMutEdge; // when access edges
     std::mutex mMutThis;

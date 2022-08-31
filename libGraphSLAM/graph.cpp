@@ -505,6 +505,15 @@ Instance *Graph::findInstance(int id)
     else return instance_itr->second.get();
 }
 
+void Graph::getStableInstanceList(std::vector<int> &list)
+{
+    
+    for(auto instance_itr:instances){
+        if(instance_itr.second->stable&&instance_itr.second->parent)
+            list.emplace_back(instance_itr.first);
+    }
+}
+
 void Graph::Wait(){
     SCLOG(VERBOSE) << "wait update properties to finish";
     if(mbThread) mPools->waitWorkComplete();

@@ -18,6 +18,7 @@ namespace PSLAM
         Eigen::Vector3f cross_vec;
         float cos_theta;
         float sin_theta;
+        Eigen::Vector3f ed0_vec, ed1_vec;   // For wall type
     };
     typedef std::shared_ptr<Corner> CornerPtr;
     typedef std::set<int> NodeList;
@@ -50,6 +51,7 @@ namespace PSLAM
         void checkOverlappedEdge(float max_cos_theta=0.9);
 
         // void setInValid();
+        bool isNeighborExist(const int nb_idx);
 
         void reInitiate();    // Re-init instance
 
@@ -85,10 +87,13 @@ namespace PSLAM
             unsigned int num_sfs;
             std::string label;
             float clss_prb;
+
+            std::string closet_object_type; // only for wall type
             std::unordered_set<size_t> neighbors;
             std::unordered_map<size_t,EdgePtr> edges;   // Directed edge
             std::vector<CornerPtr> corners; 
-            std::vector<Eigen::Vector3i> rWalkDes; // Random walk descriptor
+            std::vector<std::array<unsigned short,3>> rWalkDes; // Random walk descriptor
+            std::vector<std::array<unsigned short,3>> rWalkDesBfs; // Rwd
             std::vector<Eigen::Vector3i> rWalkRoute; // Random walk route
 
             bool stable; // Set false for instances that are too small

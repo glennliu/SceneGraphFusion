@@ -25,10 +25,12 @@ Instance::Instance(const NodePtr &node_ptr,float position_scale_,
         time_stamp.created = node_ptr->time_stamp_active;
         time_stamp.lastest_viewed = node_ptr->time_stamp_viewed;
         num_sfs = node_ptr->surfels.size();
-        if(label=="wall"&&std::abs(normal[2])>0.3) stable=false;
-        else if(num_sfs>thresh_params.min_surfels && clss_prb>thresh_params.min_class_weight
+        closet_object_type = "none";
+        // if(label=="wall"&&std::abs(normal[2])>0.3) stable=false;
+        if(num_sfs>thresh_params.min_surfels && clss_prb>thresh_params.min_class_weight
             && label!="none" && label!="otherfurniture" && label!="unknown")
             stable = true;
+        // else if (label=="window"&&num_sfs>3000) stable=true;
         else stable = false;
     }
 }
@@ -64,6 +66,7 @@ void Instance::updateAttributes()
     if(num_sfs>thresh_params.min_surfels && clss_prb>thresh_params.min_class_weight
         && label!="none" && label!="otherfurniture" && label!="unknown")
         stable = true;
+    // else if(label=="window"&&num_sfs>3000) stable=true;
     else stable = false;
 }
 
@@ -136,3 +139,8 @@ void Instance::reInitiate()
     nodelist.emplace(instance_id);
 }
 
+bool Instance::isNeighborExist(const int nb_idx)
+{
+    if(neighbors.find(nb_idx)==neighbors.end()) return false;
+    else return true;
+}
